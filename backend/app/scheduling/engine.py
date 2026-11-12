@@ -80,6 +80,8 @@ class TeacherInfo:
     qualified: frozenset[int] = frozenset()
     # (day_of_week, period_id) pairs the teacher cannot teach in.
     unavailable: frozenset[tuple[int, int]] = frozenset()
+    # Slots the teacher would like to teach in (a soft preference).
+    preferred: frozenset[tuple[int, int]] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -104,6 +106,7 @@ class SubjectInfo:
     code: str
     name: str
     room_type: str
+    heavy: bool = False
 
 
 @dataclass(frozen=True)

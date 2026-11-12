@@ -52,6 +52,9 @@ def load_state(db: Session, school_id: int, semester: Semester) -> eng.State:
             unavailable=frozenset(
                 (a.day_of_week, a.period_id) for a in t.availability if a.kind == AvailabilityKind.unavailable
             ),
+            preferred=frozenset(
+                (a.day_of_week, a.period_id) for a in t.availability if a.kind == AvailabilityKind.preferred
+            ),
         )
         for t in rows(Teacher)
     }
@@ -59,7 +62,7 @@ def load_state(db: Session, school_id: int, semester: Semester) -> eng.State:
     section_rows = rows(Section, Section.school_year_id == semester.school_year_id)
     sections = {s.id: eng.SectionInfo(s.id, s.name, s.shift_id, s.student_count) for s in section_rows}
     subject_rows = rows(Subject)
-    subjects = {s.id: eng.SubjectInfo(s.id, s.code, s.name, s.required_room_type.value) for s in subject_rows}
+    subjects = {s.id: eng.SubjectInfo(s.id, s.code, s.name, s.required_room_type.value, s.is_heavy) for s in subject_rows}
 
     # Weekly hours: the curriculum row may override the subject's default.
     default_hours = {s.id: float(s.hours_per_week) for s in subject_rows}
