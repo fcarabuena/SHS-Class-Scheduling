@@ -187,3 +187,145 @@ export function teacherChoices(teachers: Teacher[], subjectId: number): { qualif
     others: active.filter((t) => !t.qualified_subject_ids.includes(subjectId)),
   };
 }
+
+// --- automatic scheduling and substitutes -------------------------------------
+
+export type SolverShortage = {
+  section_ids: number[];
+  subject_id: number;
+  teacher_id: number | null;
+  required_hours: number;
+  placed_hours: number;
+  message: string;
+};
+
+export type SolverJob = {
+  id: number;
+  semester_id: number;
+  status: "queued" | "running" | "done" | "failed";
+  mode: "rebuild" | "fill";
+  time_limit: number;
+  progress: { solutions: number; placed_hours: number; required_hours: number; seconds: number } | null;
+  result: {
+    status: "complete" | "partial" | "nothing_to_do" | "failed";
+    stopped_early: boolean;
+    proven_optimal: boolean;
+    placed_hours: number;
+    required_hours: number;
+    added: number;
+    kept: number;
+    removed: number;
+    seconds: number;
+    problems: string[];
+    shortages: SolverShortage[];
+  } | null;
+  error: string | null;
+  applied_at: string | null;
+};
+
+export type SubstituteCandidate = {
+  teacher_id: number;
+  qualified: boolean;
+  knows_section: boolean;
+  day_hours: number;
+  week_hours: number;
+  notes: string[];
+};
+
+export type SubstituteClass = {
+  entry_id: number;
+  period_id: number;
+  subject_id: number;
+  room_id: number | null;
+  section_ids: number[];
+  candidates: SubstituteCandidate[];
+};
+
+// --- dashboard figures --------------------------------------------------------
+
+export type Meter = { id: number; label: string; value: number; max: number; note?: string };
+
+function minutesBetween(start: string, end: string): number {
+  const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+  return toMinutes(end) - toMinutes(start);
+}
+
+export function percentOf(value: number, max: number): number {
+  return max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+}
+
+/** Hours placed against hours required, per section. */
+export function sectionProgress(assignments: Assignment[], sections: Section[]): Meter[] {
+  return sections.map((section) => {
+    const mine = assignments.filter((a) => a.section_id === section.id);
+    const required = mine.reduce((sum, a) => sum + a.required_hours, 0);
+    const placed = mine.reduce((sum, a) => sum + Math.min(a.scheduled_hours, a.required_hours), 0);
+    return { id: section.id, label: section.name, value: placed, max: required };
+  });
+}
+
+/** Hours a room is in use against the teaching hours of the school week. */
+export function roomUsage(entries: Entry[], rooms: Room[], shifts: Shift[], days: number[]): Meter[] {
+  const minutes = new Map<number, number>();
+  const spans: [number, number][] = [];
+  for (const shift of shifts) {
+    for (const period of shift.periods) {
+      if (period.is_break) continue;
+      minutes.set(period.id, minutesBetween(period.start_time, period.end_time));
+      const start = Number(period.start_time.slice(0, 2)) * 60 + Number(period.start_time.slice(3, 5));
+      spans.push([start, start + minutesBetween(period.start_time, period.end_time)]);
+    }
+  }
+  // Overlapping shifts share clock time, so count the union once.
+  let perDay = 0;
+  let cursor = -1;
+  for (const [start, end] of spans.sort((a, b) => a[0] - b[0])) {
+    const from = Math.max(start, cursor);
+    if (end > from) {
+      perDay += end - from;
+      cursor = end;
+    }
+  }
+  const available = (perDay * days.length) / 60;
+  return rooms.map((room) => {
+    const seen = new Set<string>();
+    let used = 0;
+    for (const entry of entries) {
+      if (entry.room_id !== room.id) continue;
+      const key = cellKey(entry.day_of_week, entry.period_id); // combined sections share one meeting
+      if (seen.has(key)) continue;
+      seen.add(key);
+      used += minutes.get(entry.period_id) ?? 0;
+    }
+    return { id: room.id, label: room.name, value: Number((used / 60).toFixed(2)), max: available };
+  });
+}
+
+const CONFLICT_LABELS: Record<string, string> = {
+  TEACHER_DOUBLE_BOOKED: "Teacher in two classes at once",
+  ROOM_DOUBLE_BOOKED: "Room used by two classes at once",
+  SECTION_DOUBLE_BOOKED: "Section in two classes at once",
+  TEACHER_NOT_QUALIFIED: "Teacher not qualified",
+  TEACHER_UNAVAILABLE: "Teacher unavailable",
+  ROOM_TYPE_MISMATCH: "Wrong type of room",
+  ROOM_OVER_CAPACITY: "Room too small",
+  TEACHER_DAILY_OVERLOAD: "Over the daily load limit",
+  TEACHER_WEEKLY_OVERLOAD: "Over the weekly load limit",
+  SUBJECT_HOURS_OVER: "Too many hours for a subject",
+  SUBJECT_HOURS_UNDER: "Subject short of hours",
+};
+
+export function conflictLabel(code: string): string {
+  return CONFLICT_LABELS[code] ?? code;
+}
+
+/** Conflicts by kind, most frequent first. */
+export function conflictCounts(conflicts: Conflict[]): { code: string; label: string; severity: string; count: number }[] {
+  const counts = new Map<string, { code: string; label: string; severity: string; count: number }>();
+  for (const conflict of conflicts) {
+    const row = counts.get(conflict.code) ?? { code: conflict.code, label: conflictLabel(conflict.code), severity: conflict.severity, count: 0 };
+    row.count += 1;
+    counts.set(conflict.code, row);
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}

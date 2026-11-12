@@ -4,12 +4,14 @@ A multi-school web app for building class schedules and teacher loads in
 Philippine Senior High Schools (Grades 11-12), with automated conflict
 detection.
 
-**Status: Phase 1B complete.** Schools can register, finish a setup wizard,
+**Status: Phase 2 complete.** Schools can register, finish a setup wizard,
 manage strands, subjects, sections, teachers and rooms (by hand or by
 CSV/Excel import), assign teachers to subjects with live load checks, and
 build the weekly timetable by drag and drop with real-time conflict
-detection, suggested fixes, and PDF/Excel export. The automatic scheduler
-comes in Phase 2.
+detection, suggested fixes, and PDF/Excel export. The timetable can also be
+generated automatically, with a plain-language explanation of anything that
+does not fit, a dashboard, and a substitute finder. Public share links,
+notifications and multi-school administration come in Phase 3.
 
 | Layer | Technology |
 |---|---|
@@ -17,6 +19,7 @@ comes in Phase 2.
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2 |
 | Database | PostgreSQL 16, Alembic migrations |
 | Auth | JWT, argon2 password hashing, three roles |
+| Auto-scheduler | Google OR-Tools CP-SAT |
 | Export | openpyxl (Excel), reportlab (PDF) |
 | Tests | pytest, Vitest, Playwright |
 
@@ -31,14 +34,15 @@ shs-scheduler/
       models.py       Database schema (SQLAlchemy)
       schemas.py      Request/response validation
       routers/        auth, school (onboarding), crud, imports, templates, schedule
-      scheduling/     engine.py (conflict rules, no database), state.py, export.py
+      scheduling/     engine.py (conflict rules, no database), solver.py (CP-SAT),
+                      jobs.py (background runs), state.py, export.py
       data/           shs_template.json - editable DepEd seed template
       seed.py         Fictional demo data
     alembic/          Database migrations
     tests/            pytest suite + e2e test server
   frontend/
     src/app/          Pages (login, register, onboarding, data pages,
-                      teacher-loading, timetable, history)
+                      teacher-loading, timetable, substitutes, history)
     src/components/   Shared UI (CRUD page, import dialog, availability grid)
     src/lib/          API client, auth, bell-schedule and timetable helpers
     e2e/              Playwright browser tests
@@ -158,6 +162,11 @@ suggested fixes; no database needed), `tests/test_schedule_api.py`
 isolation, audit log, Excel and PDF export) and a browser test that builds a
 timetable by drag and drop and fixes a conflict.
 
+Phase 2 adds `tests/test_solver.py` (the generator obeys every hard
+constraint, keeps pinned classes, explains shortages), API tests for
+background runs, applying, stale results and the substitute finder, and a
+browser test that auto-schedules around a pinned class.
+
 ## User guide
 
 ### Roles
@@ -254,7 +263,44 @@ unavailable; wrong room type; room too small; daily and weekly load limits;
 and each subject's required weekly hours (too few is shown as "short",
 too many as a conflict).
 
-### 7. Change history
+### 7. Auto-schedule
+
+On the **Timetable** page choose **Auto-schedule**.
+
+1. Pick **Rebuild the timetable** (pinned classes stay; everything else is
+   placed again) or **Fill in what is missing** (everything already placed
+   stays), set a time limit, and press **Start**. It runs in the background;
+   you can close the window and come back.
+2. When it finishes you see how many hours fit. If something does not fit,
+   **Things to fix in your data** and **What could not be placed** say why,
+   for example a section that needs more hours than its shift has periods,
+   or a teacher who would pass the weekly limit.
+3. **Apply this timetable** saves it. Nothing changes before that. If someone
+   edits the timetable or the teacher loading in the meantime, the result is
+   refused and you run it again.
+
+To keep a class where it is (Work Immersion, a shared laboratory slot), pin
+it first, then rebuild.
+
+The generated timetable never breaks a hard rule. Among valid timetables it
+prefers: a subject spread over different days, no free periods in a
+section's day, teachers' preferred slots, heavy subjects not in the last
+period, no more than three periods in a row for a teacher, even daily loads,
+and few room changes for a section. The weights are in the school settings
+(`soft_constraint_weights`, API only for now); 0 switches a preference off.
+
+### 8. Dashboard and substitutes
+
+The **Dashboard** shows the share of class hours placed, conflicts by kind,
+each section's progress, each teacher's load against the weekly limit, and
+how much each room is used.
+
+**Find a substitute**: choose the absent teacher and the day. Each of their
+classes lists the teachers who are free then, available, and still within
+their daily limit, with qualified teachers and teachers who already know the
+section first. It only suggests; it does not change the timetable.
+
+### 9. Change history
 
 Admins can open **Change history** to see who changed the timetable or
 teacher loading, and when.
@@ -486,6 +532,15 @@ is the teacher loading; `SCHEDULE_ENTRY` is one class meeting on the timetable.
     because overload is a school decision.
 17. Combined sections must share a shift and must be combined before their
     classes are placed.
+18. The scheduler never fails outright: when not everything fits it returns
+    the fullest valid timetable and lists what is missing and why.
+19. Subjects without a teacher are still scheduled (without one). A class
+    too big for every room of its type is scheduled without a room and
+    reported.
+20. "More than three periods in a row" is the fixed threshold behind the
+    consecutive-periods preference; only its weight is configurable.
+21. A substitute may pass the weekly limit (it is noted) but never the daily
+    limit.
 
 ## DepEd rules you must verify yourself
 
@@ -522,6 +577,12 @@ These are configurable data in the app; the shipped values are placeholders.
   teacher load yet.
 - Drag and drop needs a mouse; on touch screens use click-then-click.
 - A class takes exactly one period; double periods are placed as two classes.
+- Auto-schedule runs inside the API process (two at a time, one per school).
+  A run that is in progress when the server restarts is reported as failed
+  and has to be started again. With several API processes it would need a
+  shared job queue.
+- The preference weights have no settings screen yet (API only).
+- The substitute finder suggests cover but does not record substitutions.
 - Editing an existing school year's dates is API-only.
 - No login rate limiting yet; add it before any public deployment.
 - `docker-compose.yml` has not been run on this machine.

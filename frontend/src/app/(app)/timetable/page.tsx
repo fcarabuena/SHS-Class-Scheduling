@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { AutoScheduleDialog } from "@/components/AutoScheduleDialog";
 import { Alert, Badge, Button, Field, inputClass, Spinner } from "@/components/ui";
 import { api, ApiError, download } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -41,6 +42,7 @@ export default function TimetablePage() {
   const [advice, setAdvice] = useState<Advice | null>(null);
   const [hint, setHint] = useState("");
   const [exportAll, setExportAll] = useState(false);
+  const [autoOpen, setAutoOpen] = useState(false);
 
   const names = useMemo(() => {
     const byId = <T extends { id: number }>(rows: T[] = []) => new Map(rows.map((row) => [row.id, row]));
@@ -269,6 +271,16 @@ export default function TimetablePage() {
           )}
         </Field>
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {canEdit && (
+            <Button
+              onClick={() => {
+                setPicked(null);
+                setAutoOpen(true);
+              }}
+            >
+              Auto-schedule
+            </Button>
+          )}
           <label className="flex items-center gap-2 text-sm text-stone-700">
             <input type="checkbox" checked={exportAll} onChange={(event) => setExportAll(event.target.checked)} />
             All {viewInfo.plural}
@@ -623,6 +635,14 @@ export default function TimetablePage() {
           )}
         </aside>
       </div>
+
+      {autoOpen && (
+        <AutoScheduleDialog
+          semesterId={data.semester_id}
+          onApplied={(fresh) => run(async () => fresh)}
+          onClose={() => setAutoOpen(false)}
+        />
+      )}
     </div>
   );
 }

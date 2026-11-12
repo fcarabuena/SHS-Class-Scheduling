@@ -3,13 +3,17 @@ import { describe, expect, it } from "vitest";
 import type { Assignment, Conflict, Entry, Teacher, TeacherLoad } from "./schedule";
 import {
   assignmentsForView,
+  conflictCounts,
   conflictsForView,
   entriesForView,
   formatHours,
   gridRows,
   loadPercent,
   meetingsByCell,
+  percentOf,
   remainingHours,
+  roomUsage,
+  sectionProgress,
   severityByEntry,
   teacherChoices,
 } from "./schedule";
@@ -172,5 +176,56 @@ describe("teacher loading", () => {
     const choices = teacherChoices(teachers, 7);
     expect(choices.qualified.map((t) => t.full_name)).toEqual(["Ana", "Zeny"]);
     expect(choices.others.map((t) => t.full_name)).toEqual(["Abel"]);
+  });
+});
+
+describe("dashboard figures", () => {
+  const section = (id: number, name: string) => ({
+    id, name, strand_id: 1, grade_level: 11, shift_id: 1, student_count: 40, school_year_id: 1,
+  });
+
+  it("totals placed and required hours per section without counting extra hours", () => {
+    const meters = sectionProgress(
+      [
+        assignment(1, { required_hours: 4, scheduled_hours: 2 }),
+        assignment(2, { required_hours: 1, scheduled_hours: 3 }),
+        assignment(3, { section_id: 2, required_hours: 2, scheduled_hours: 2 }),
+      ],
+      [section(1, "11-A"), section(2, "11-B"), section(3, "11-C")],
+    );
+    expect(meters.map((m) => [m.label, m.value, m.max])).toEqual([["11-A", 3, 5], ["11-B", 2, 2], ["11-C", 0, 0]]);
+    expect(percentOf(3, 5)).toBe(60);
+    expect(percentOf(0, 0)).toBe(0);
+  });
+
+  it("measures room use against the school week, counting overlapping shifts and combined classes once", () => {
+    const hour = (id: number, shift_id: number, start: string, end: string, is_break = false) => ({
+      id, shift_id, name: `P${id}`, sort_order: id, start_time: start, end_time: end, is_break,
+    });
+    const shifts: Shift[] = [
+      { id: 1, name: "AM", start_time: "07:00:00", end_time: "09:30:00", periods: [hour(1, 1, "07:00:00", "08:00:00"), hour(2, 1, "08:00:00", "09:00:00"), hour(9, 1, "09:00:00", "09:30:00", true)] },
+      { id: 2, name: "PM", start_time: "08:30:00", end_time: "10:00:00", periods: [hour(3, 2, "08:30:00", "10:00:00")] },
+    ];
+    const rooms = [{ id: 1, code: "R1", name: "Room 1", type: "lecture", capacity: 45 }, { id: 2, code: "R2", name: "Room 2", type: "lecture", capacity: 45 }];
+    const entries = [
+      entry(1, { combined_group_id: 5 }),
+      entry(2, { combined_group_id: 5, section_id: 2 }),
+      entry(3, { day_of_week: 2, period_id: 3 }),
+      entry(4, { room_id: null }),
+    ];
+    // 07:00-10:00 is 3 h of teaching time a day, 15 h over five days.
+    expect(roomUsage(entries, rooms, shifts, [1, 2, 3, 4, 5])).toEqual([
+      { id: 1, label: "Room 1", value: 2.5, max: 15 },
+      { id: 2, label: "Room 2", value: 0, max: 15 },
+    ]);
+  });
+
+  it("counts conflicts by kind, most frequent first", () => {
+    const counts = conflictCounts([
+      conflict({ code: "ROOM_TOO" }),
+      conflict({ code: "TEACHER_DOUBLE_BOOKED" }),
+      conflict({ code: "TEACHER_DOUBLE_BOOKED" }),
+    ]);
+    expect(counts.map((c) => [c.label, c.count])).toEqual([["Teacher in two classes at once", 2], ["ROOM_TOO", 1]]);
   });
 });

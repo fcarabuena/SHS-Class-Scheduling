@@ -146,7 +146,7 @@ test("layout works at phone width", async ({ page }) => {
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Subjects" }).click();
+  await page.getByRole("link", { name: "Subjects", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Subjects" })).toBeVisible();
   const overflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflows).toBe(false);

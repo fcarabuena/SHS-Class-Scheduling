@@ -17,7 +17,7 @@ type Log = {
   created_at: string;
 };
 
-const SCHEDULE_TYPES = "schedule_entry,assignment,schedule";
+const SCHEDULE_TYPES = "schedule_entry,assignment,schedule,solver_job";
 
 function describe(log: Log): string {
   const changes = log.changes;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ScheduleDashboard } from "@/components/ScheduleDashboard";
 import { Alert, Badge, Spinner } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -87,6 +88,8 @@ export default function DashboardPage() {
           </Link>
         ))}
       </section>
+
+      {activeYear && <ScheduleDashboard />}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-stone-900">Shifts and bell schedule</h2>
