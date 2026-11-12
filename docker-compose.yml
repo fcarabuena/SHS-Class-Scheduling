@@ -1,0 +1,17 @@
+# OPTIONAL. The app runs without Docker (see README). This file only offers
+# PostgreSQL in a container as an alternative to the local D:\Tools install.
+# Data is bind-mounted under .\data (on drive D), never in a named volume.
+#
+# NOTE: not yet tested on this machine - Docker Desktop is not installed.
+services:
+  db:
+    image: postgres:16.15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped

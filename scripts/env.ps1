@@ -37,3 +37,6 @@ $env:NEXT_TELEMETRY_DISABLED = '1'
 $env:PGDATA = 'D:\Databases\pgdata'
 $env:PGPORT = '5432'
 $env:PGHOST = 'localhost'
+
+# Playwright browsers (end-to-end tests) are also kept on drive D
+$env:PLAYWRIGHT_BROWSERS_PATH = 'D:\Cache\ms-playwright'
