@@ -115,11 +115,16 @@ def delete_user(user_id: int, db: DbSession, admin: AdminUser):
 
 
 @router.get("/audit-logs", response_model=list[AuditLogOut])
-def list_audit_logs(db: DbSession, admin: AdminUser, limit: int = 100, offset: int = 0):
+def list_audit_logs(
+    db: DbSession, admin: AdminUser, limit: int = 100, offset: int = 0, entity_type: str | None = None
+):
+    """Newest first. ``entity_type`` takes one or more comma-separated types."""
     limit = max(1, min(limit, 500))
+    query = select(AuditLog).where(AuditLog.school_id == admin.school_id)
+    if entity_type:
+        query = query.where(AuditLog.entity_type.in_([t.strip() for t in entity_type.split(",") if t.strip()]))
     return db.scalars(
-        select(AuditLog)
-        .where(AuditLog.school_id == admin.school_id)
+        query
         .order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
         .limit(limit)
         .offset(max(0, offset))

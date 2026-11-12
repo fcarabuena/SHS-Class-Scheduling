@@ -367,13 +367,24 @@ class TeachingAssignment(Base):
     section_id: Mapped[int] = mapped_column(ForeignKey("sections.id", ondelete="CASCADE"))
     subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.id", ondelete="CASCADE"))
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"))
+    # Assignments sharing a group id are taught together as one combined class.
+    combined_group_id: Mapped[int | None] = mapped_column(Integer, index=True)
 
 
 class ScheduleEntry(Base):
     __tablename__ = "schedule_entries"
     __table_args__ = (
         # Hard constraint 3: a section has at most one subject per slot.
-        UniqueConstraint("semester_id", "section_id", "day_of_week", "period_id"),
+        # Deferred to commit so two classes can swap slots in one transaction.
+        UniqueConstraint(
+            "semester_id",
+            "section_id",
+            "day_of_week",
+            "period_id",
+            name="uq_schedule_entries_slot",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
         CheckConstraint("day_of_week BETWEEN 1 AND 6", name="ck_schedule_day"),
     )
 

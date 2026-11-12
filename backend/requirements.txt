@@ -9,3 +9,4 @@ argon2-cffi==25.1.0
 PyJWT==2.15.1
 python-multipart==0.0.33
 openpyxl==3.1.5
+reportlab==5.1.0

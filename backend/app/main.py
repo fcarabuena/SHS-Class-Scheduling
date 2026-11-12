@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 from .config import settings
-from .routers import auth, crud, imports, school, templates
+from .routers import auth, crud, imports, schedule, school, templates
 from .services import integrity_message
 
 app = FastAPI(title="SHS Class Scheduling and Teacher Loading API", version="0.1.0")
@@ -31,5 +31,6 @@ app.include_router(auth.router)
 app.include_router(school.router)
 app.include_router(templates.router)
 app.include_router(imports.router)
+app.include_router(schedule.router)
 for router in crud.routers:
     app.include_router(router)
