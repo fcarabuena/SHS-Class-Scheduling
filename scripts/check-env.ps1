@@ -14,6 +14,9 @@
     powershell -ExecutionPolicy Bypass -File scripts\check-env.ps1
 #>
 
+# Use the project-scoped toolchain (D:\Tools first on PATH, caches on D).
+. "$PSScriptRoot\env.ps1"
+
 $RequiredDrive = 'D:'
 $script:Failures = 0
 
@@ -108,11 +111,7 @@ Test-Tool -Name 'docker' -Expected 'D:\Tools\Docker' -Optional
 Write-Host ''
 Write-Host 'Caches, temp and data' -ForegroundColor Cyan
 
-# Read the persisted user variable, falling back to the current process
-# (a freshly set user variable is not visible in already-open terminals).
-$pipCache = [Environment]::GetEnvironmentVariable('PIP_CACHE_DIR', 'User')
-if (-not $pipCache) { $pipCache = $env:PIP_CACHE_DIR }
-Test-PathSetting -Name 'PIP_CACHE_DIR' -Value $pipCache -Expected 'D:\Cache\pip'
+Test-PathSetting -Name 'PIP_CACHE_DIR' -Value $env:PIP_CACHE_DIR -Expected 'D:\Cache\pip'
 
 $npm = Get-Command npm -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($npm) {
@@ -127,7 +126,7 @@ if ($npm) {
 
 Test-PathSetting -Name 'project TEMP dir' -Value 'D:\Temp' -Expected 'D:\Temp' -MustExist
 
-$pgData = 'D:\Data\pgdata'
+$pgData = $env:PGDATA
 if (Test-Path (Join-Path $pgData 'PG_VERSION')) {
     $pgVersion = (Get-Content (Join-Path $pgData 'PG_VERSION') -TotalCount 1).Trim()
     if ($pgVersion -eq '16') {
