@@ -3,16 +3,37 @@
     python -m app.seed
 
 All names are invented placeholders. Safe to run twice: it does nothing if
-the demo admin account already exists.
+the demo admin account already exists (it then only adds the demo teacher
+loading and timetable if the school has none yet).
 """
 
 import datetime as dt
 
 from sqlalchemy import select
 
+from sqlalchemy.orm import Session
+
 from .db import SessionLocal
-from .models import Period, Role, Room, School, SchoolYear, Section, Semester, Shift, Strand, Subject, Teacher, User
+from .models import (
+    CurriculumEntry,
+    Period,
+    Role,
+    Room,
+    ScheduleEntry,
+    School,
+    SchoolYear,
+    Section,
+    Semester,
+    Shift,
+    Strand,
+    Subject,
+    Teacher,
+    TeachingAssignment,
+    User,
+)
 from .routers.templates import apply_template
+from .scheduling import engine as eng
+from .scheduling.state import load_state, pick_room
 from .security import hash_password
 
 DEMO_PASSWORD = "DemoPass#2026"
@@ -76,10 +97,104 @@ def _bell_schedule(school_id: int, shift: Shift, first: dt.time, labels: list[tu
         cursor = end
 
 
+def seed_schedule(db: Session, school_id: int) -> int:
+    """Demo teacher loading and a conflict-free starter timetable.
+
+    Subjects come from the curriculum, each goes to the least-loaded qualified
+    teacher, and classes are dropped into the first slots the conflict engine
+    accepts. Whatever does not fit is left for the user to place. Returns the
+    number of classes placed (0 if the school already has assignments).
+    """
+    if db.scalar(select(TeachingAssignment.id).where(TeachingAssignment.school_id == school_id).limit(1)):
+        return 0
+    semester = db.scalars(
+        select(Semester).where(Semester.school_id == school_id).order_by(Semester.is_active.desc(), Semester.number)
+    ).first()
+    if semester is None:
+        return 0
+    sections = db.scalars(
+        select(Section).where(Section.school_id == school_id, Section.school_year_id == semester.school_year_id)
+    ).all()
+    curriculum = db.scalars(
+        select(CurriculumEntry).where(
+            CurriculumEntry.school_id == school_id, CurriculumEntry.semester_number == semester.number
+        )
+    ).all()
+    rows: dict[tuple[int, int], TeachingAssignment] = {}
+    for section in sections:
+        for item in curriculum:
+            if (item.strand_id, item.grade_level) == (section.strand_id, section.grade_level):
+                rows[(section.id, item.subject_id)] = TeachingAssignment(
+                    school_id=school_id, semester_id=semester.id, section_id=section.id, subject_id=item.subject_id
+                )
+    db.add_all(rows.values())
+    db.flush()
+
+    state = load_state(db, school_id, semester)
+    load = {teacher_id: 0 for teacher_id in state.teachers}
+    for req in state.requirements:
+        able = [
+            t for t in state.teachers.values()
+            if req.subject_id in t.qualified and load[t.id] + req.minutes <= t.max_weekly_minutes
+        ]
+        if able:
+            teacher = min(able, key=lambda t: (load[t.id], t.id))
+            load[teacher.id] += req.minutes
+            rows[(req.section_id, req.subject_id)].teacher_id = teacher.id
+    db.flush()
+
+    state = load_state(db, school_id, semester)
+    placed: list[eng.Entry] = []
+    next_id = -1
+    for per_day in (1, 2):  # first spread each subject over the week, then fill up
+        for req in state.requirements:
+            section = state.sections[req.section_id]
+            if req.teacher_id is None:
+                continue
+            for day in state.days:
+                mine = [e for e in placed if (e.section_id, e.subject_id) == (req.section_id, req.subject_id)]
+                if sum(state.slots[e.period_id].minutes for e in mine) >= req.minutes:
+                    break
+                if sum(e.day == day for e in mine) >= per_day:
+                    continue
+                for slot in sorted(state.slots.values(), key=lambda s: s.start):
+                    current = state.with_entries(placed)
+                    if slot.shift_id != section.shift_id or not eng.cell_is_free(current, [section.id], day, slot.id):
+                        continue
+                    room_id = pick_room(current, [section.id], req.subject_id, day, slot.id)
+                    if room_id is None:
+                        continue
+                    trial = eng.Entry(next_id, section.id, req.subject_id, day, slot.id, req.teacher_id, room_id)
+                    after = eng.errors(eng.detect(state.with_entries([*placed, trial])))
+                    if not eng.for_entries(after, [trial.id]):
+                        placed.append(trial)
+                        next_id -= 1
+                        break
+    db.add_all(
+        ScheduleEntry(
+            school_id=school_id,
+            semester_id=semester.id,
+            section_id=e.section_id,
+            subject_id=e.subject_id,
+            teacher_id=e.teacher_id,
+            room_id=e.room_id,
+            day_of_week=e.day,
+            period_id=e.period_id,
+        )
+        for e in placed
+    )
+    return len(placed)
+
+
 def seed() -> None:
     with SessionLocal() as db:
-        if db.scalar(select(User.id).where(User.email == DEMO_USERS[0][0])):
-            print("Demo data already exists - nothing to do.")
+        if existing := db.scalar(select(User).where(User.email == DEMO_USERS[0][0])):
+            placed = seed_schedule(db, existing.school_id)
+            db.commit()
+            if placed:
+                print(f"Demo school already exists - added teacher loading and {placed} timetable classes.")
+            else:
+                print("Demo data already exists - nothing to do.")
             return
 
         school = School(name="Demo Senior High School", division="Sample Division", region="Sample Region")
@@ -151,6 +266,8 @@ def seed() -> None:
             )
 
         school.onboarding_completed = True
+        db.flush()
+        seed_schedule(db, sid)
         db.commit()
 
     print("Demo school created. Sign in with any of:")

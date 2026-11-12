@@ -4,10 +4,12 @@ A multi-school web app for building class schedules and teacher loads in
 Philippine Senior High Schools (Grades 11-12), with automated conflict
 detection.
 
-**Status: Phase 1A complete.** Schools can register, finish a setup wizard,
-and manage strands, subjects, sections, teachers and rooms (by hand or by
-CSV/Excel import). Timetabling, conflict detection and the auto-scheduler
-come in Phases 1B and 2.
+**Status: Phase 1B complete.** Schools can register, finish a setup wizard,
+manage strands, subjects, sections, teachers and rooms (by hand or by
+CSV/Excel import), assign teachers to subjects with live load checks, and
+build the weekly timetable by drag and drop with real-time conflict
+detection, suggested fixes, and PDF/Excel export. The automatic scheduler
+comes in Phase 2.
 
 | Layer | Technology |
 |---|---|
@@ -15,6 +17,7 @@ come in Phases 1B and 2.
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2 |
 | Database | PostgreSQL 16, Alembic migrations |
 | Auth | JWT, argon2 password hashing, three roles |
+| Export | openpyxl (Excel), reportlab (PDF) |
 | Tests | pytest, Vitest, Playwright |
 
 ## Project structure
@@ -27,15 +30,17 @@ shs-scheduler/
       main.py         FastAPI app
       models.py       Database schema (SQLAlchemy)
       schemas.py      Request/response validation
-      routers/        auth, school (onboarding), crud, imports, templates
+      routers/        auth, school (onboarding), crud, imports, templates, schedule
+      scheduling/     engine.py (conflict rules, no database), state.py, export.py
       data/           shs_template.json - editable DepEd seed template
       seed.py         Fictional demo data
     alembic/          Database migrations
     tests/            pytest suite + e2e test server
   frontend/
-    src/app/          Pages (login, register, onboarding, data pages)
+    src/app/          Pages (login, register, onboarding, data pages,
+                      teacher-loading, timetable, history)
     src/components/   Shared UI (CRUD page, import dialog, availability grid)
-    src/lib/          API client, auth, bell-schedule helpers
+    src/lib/          API client, auth, bell-schedule and timetable helpers
     e2e/              Playwright browser tests
   docker-compose.yml  Optional PostgreSQL container (untested, see below)
 ```
@@ -144,8 +149,14 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1 -E2E     # also the Pl
 Phase 1A tests cover authentication, the three roles, isolation between
 schools, onboarding rules, CRUD validation, CSV/Excel import, the seed
 template, the audit log, and a check that no student personal data exists in
-the schema. Tests for the nine scheduling hard constraints arrive with the
-conflict engine in Phase 1B.
+the schema.
+
+Phase 1B adds `tests/test_conflict_engine.py` (a unit test section for each
+of the nine hard constraints, plus combined sections, load checks and
+suggested fixes; no database needed), `tests/test_schedule_api.py`
+(loading, placing, moving and swapping, pinning, combining, roles, tenant
+isolation, audit log, Excel and PDF export) and a browser test that builds a
+timetable by drag and drop and fixes a conflict.
 
 ## User guide
 
@@ -154,8 +165,8 @@ conflict engine in Phase 1B.
 | Role | Can do |
 |---|---|
 | Admin | Everything, including school setup, user accounts and the audit log |
-| Scheduler | Add and edit strands, subjects, sections, teachers, rooms; import files |
-| Teacher | View only |
+| Scheduler | Add and edit strands, subjects, sections, teachers, rooms; import files; teacher loading and the timetable |
+| Teacher | View only (timetables included), and can export |
 
 ### 1. Register your school
 
@@ -204,6 +215,49 @@ matching rows are updated, new ones are added. Import subjects before
 teachers, and strands and teachers before sections, because later files
 refer to earlier ones by code. For teachers, list qualified subject codes
 separated by semicolons, for example `CORE-GENMATH;CORE-STAT`.
+
+### 5. Teacher loading
+
+Open **Teacher loading**.
+
+1. **Add subjects from curriculum** lists, for every section, the subjects
+   its strand and grade take this semester. Use **Add subject** for anything
+   extra, **Remove** for anything not offered.
+2. Pick a teacher for each row. Qualified teachers are listed first, each
+   with their current load. The **Teacher loads** panel updates at once and
+   turns amber when a teacher is over the weekly limit, cannot fit the hours
+   inside the daily limit and available time, or is not qualified.
+3. **Combine** teaches one subject to several sections together (same
+   shift): one teacher, one room, one slot, counted once in the load.
+
+### 6. Timetable
+
+Open **Timetable** and choose **By section**, **By teacher** or **By room**.
+
+- Drag a class from **Classes to place** onto the week, or click it and then
+  click slots. While a class is in hand, green slots are safe and red slots
+  would cause a conflict (hover to see why). A free room of the right type
+  and size is chosen for you.
+- Drag a placed class to move it. Dropping it on another class of the same
+  section swaps the two.
+- Click a class to change its room, **pin** it (pinned classes cannot be
+  moved or removed, useful for Work Immersion or fixed blocks) or remove it.
+- Conflicts are listed under the grid. **Show fixes** offers one-click
+  changes that clear the conflict: another slot, another room, or another
+  qualified teacher.
+- **Export Excel / Export PDF** saves the timetable on screen; tick
+  **All sections/teachers/rooms** for one sheet or page each.
+
+Conflicts checked: a teacher, room or section in two classes at once
+(by clock time, so two shifts are handled); teacher not qualified; teacher
+unavailable; wrong room type; room too small; daily and weekly load limits;
+and each subject's required weekly hours (too few is shown as "short",
+too many as a conflict).
+
+### 7. Change history
+
+Admins can open **Change history** to see who changed the timetable or
+teacher loading, and when.
 
 ## Database schema
 
@@ -359,6 +413,7 @@ erDiagram
         int section_id FK
         int subject_id FK
         int teacher_id FK
+        int combined_group_id "sections taught together"
     }
     SCHEDULE_ENTRY {
         int id PK
@@ -384,7 +439,7 @@ erDiagram
 ```
 
 Every table except `SCHOOL` also carries `school_id`. `TEACHING_ASSIGNMENT`
-and `SCHEDULE_ENTRY` exist in the schema now and are used from Phase 1B.
+is the teacher loading; `SCHEDULE_ENTRY` is one class meeting on the timetable.
 
 ## Data privacy (RA 10173)
 
@@ -396,8 +451,9 @@ and `SCHEDULE_ENTRY` exist in the schema now and are used from Phase 1B.
 - **Tenant isolation.** Every query is filtered by the signed-in user's
   school, and references to another school's records are rejected.
 - **Passwords.** Hashed with argon2id; never logged or returned.
-- **Audit log.** Every create, update, delete and import is recorded with
-  who and when (admin-only view at `GET /api/audit-logs`).
+- **Audit log.** Every create, update, delete and import, and every
+  timetable and teacher loading change, is recorded with who and when
+  (admin-only **Change history** page, or `GET /api/audit-logs`).
 
 ## Assumptions made
 
@@ -417,6 +473,19 @@ and `SCHEDULE_ENTRY` exist in the schema now and are used from Phase 1B.
 10. Deleting a track, strand, shift or subject that is in use is blocked
     rather than cascading.
 11. PostgreSQL is run by a script rather than as a Windows service.
+12. Conflicts are flagged, not blocked: a clashing timetable can be saved and
+    fixed later. The one exception is that a section can never hold two
+    classes in the same slot.
+13. A class's teacher always comes from teacher loading; changing the
+    teacher there updates the classes already on the timetable.
+14. A subject must be held in a room of exactly its required type.
+15. Required weekly hours are met when the scheduled time reaches them;
+    it counts as "too many" only when a whole class meeting could be removed
+    and the requirement would still be met (periods rarely divide evenly).
+16. Teachers may be loaded over their limits (it is flagged, not refused),
+    because overload is a school decision.
+17. Combined sections must share a shift and must be combined before their
+    classes are placed.
 
 ## DepEd rules you must verify yourself
 
@@ -446,10 +515,13 @@ These are configurable data in the app; the shipped values are placeholders.
    registration with the National Privacy Commission, a privacy notice, and
    a data sharing or processing agreement are your responsibility.
 
-## Known limits in Phase 1A
+## Known limits
 
-- No screen yet for editing curriculum rows or the audit log (both are
-  available through the API).
+- No screen yet for editing curriculum rows (available through the API).
+- Advisory, ancillary and other non-teaching hours do not count towards
+  teacher load yet.
+- Drag and drop needs a mouse; on touch screens use click-then-click.
+- A class takes exactly one period; double periods are placed as two classes.
 - Editing an existing school year's dates is API-only.
 - No login rate limiting yet; add it before any public deployment.
 - `docker-compose.yml` has not been run on this machine.

@@ -11,12 +11,15 @@ import { Alert, Button, Spinner } from "./ui";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/timetable", label: "Timetable" },
+  { href: "/teacher-loading", label: "Teacher loading" },
   { href: "/strands", label: "Tracks & strands" },
   { href: "/subjects", label: "Subjects" },
   { href: "/sections", label: "Sections" },
   { href: "/teachers", label: "Teachers" },
   { href: "/rooms", label: "Rooms" },
   { href: "/users", label: "User accounts", adminOnly: true },
+  { href: "/history", label: "Change history", adminOnly: true },
   { href: "/onboarding", label: "School setup", adminOnly: true },
 ];
 
