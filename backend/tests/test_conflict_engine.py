@@ -19,6 +19,7 @@ from app.scheduling.engine import (
     check_placement,
     detect,
     errors,
+    find_substitutes,
     suggest_fixes,
     teacher_loads,
 )
@@ -362,3 +363,38 @@ def test_pinned_entries_get_no_suggestions(pinned, expected_empty):
 
 def test_no_suggestions_for_an_entry_without_conflicts():
     assert suggest_fixes(make_state([entry(1)]), 1) == []
+
+
+# --- substitution finder ------------------------------------------------------
+
+
+def test_substitutes_must_be_free_available_and_within_the_daily_limit():
+    cara, dan, eve = 3, 4, 5
+    state = make_state([entry(1), entry(2, section=S_B, teacher=BEN, room=R2), entry(3, section=S_B, teacher=dan, room=R2, period=P2)])
+    state.teachers[cara] = TeacherInfo(cara, "Cara", 360, 1800, frozenset({MATH}), unavailable=frozenset({(MON, P1)}))
+    state.teachers[dan] = TeacherInfo(dan, "Dan", 60, 1800, frozenset({MATH}))  # already teaches 1 h on Monday
+    state.teachers[eve] = TeacherInfo(eve, "Eve", 360, 1800, frozenset())
+    found = find_substitutes(state, 1)  # who can cover Ana's Monday period 1 class?
+    assert [s.teacher_id for s in found] == [eve]  # Ben is teaching, Cara unavailable, Dan at his daily limit
+    assert found[0].qualified is False and found[0].notes == ("Not qualified for this subject",)
+    assert found[0].day_minutes == 60
+
+
+def test_substitutes_are_ranked_qualified_first_then_familiar_then_lightest_day():
+    cara, dan, eve = 3, 4, 5
+    state = make_state(
+        [
+            entry(1),  # the class to cover: 11-A MATH, Monday period 1
+            entry(2, period=P2, subject=SCI, teacher=dan, room=R2),  # Dan already teaches 11-A
+            entry(3, section=S_B, period=P3, teacher=eve, room=R2),
+        ]
+    )
+    state.teachers[cara] = TeacherInfo(cara, "Cara", 360, 1800, frozenset({MATH}))
+    state.teachers[dan] = TeacherInfo(dan, "Dan", 360, 1800, frozenset({MATH, SCI}))
+    state.teachers[eve] = TeacherInfo(eve, "Eve", 360, 60, frozenset({MATH}))
+    state.teachers[BEN] = TeacherInfo(BEN, "Ben", 360, 1800, frozenset())
+    found = find_substitutes(state, 1)
+    assert [s.teacher_id for s in found] == [dan, cara, eve, BEN]
+    assert found[0].knows_section and found[0].day_minutes == 120
+    assert found[2].notes == ("Would pass the weekly limit this week",)
+    assert find_substitutes(state, 999) == []

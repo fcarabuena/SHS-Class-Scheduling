@@ -400,3 +400,24 @@ class ScheduleEntry(Base):
     pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     # Entries sharing a group id are one combined class (same teacher + room).
     combined_group_id: Mapped[int | None] = mapped_column(Integer, index=True)
+
+
+class SolverJob(Base):
+    """One run of the automatic scheduler. The proposed timetable waits in
+    ``result`` until a user applies it."""
+
+    __tablename__ = "solver_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = _school_fk()
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    status: Mapped[str] = mapped_column(String(20), default="queued")  # queued, running, done, failed
+    mode: Mapped[str] = mapped_column(String(20))  # rebuild or fill
+    time_limit: Mapped[int] = mapped_column(Integer)
+    progress: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    error: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    applied_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

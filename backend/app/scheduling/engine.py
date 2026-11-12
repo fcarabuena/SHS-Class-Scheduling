@@ -611,3 +611,64 @@ def suggest_fixes(state: State, entry_id: int, per_kind: int = 4) -> list[Fix]:
         fixes += sorted(options, key=lambda f: (f.remaining_errors, f.label))[:per_kind]
 
     return fixes
+
+
+# --- substitution finder ----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Substitute:
+    teacher_id: int
+    qualified: bool
+    knows_section: bool
+    day_minutes: int  # teaching load on that day if they take the class
+    week_minutes: int
+    notes: tuple[str, ...] = ()
+
+
+def find_substitutes(state: State, entry_id: int) -> list[Substitute]:
+    """Teachers who could cover one class meeting, best choice first.
+
+    A candidate must be free at that time, not marked unavailable, and still
+    within the daily limit after taking the class. Qualified teachers come
+    first, then teachers who already teach the section, then the lightest
+    day. Passing the weekly limit is noted, not ruled out, because a
+    substitution is a one-off.
+    """
+    entry = next((e for e in state.entries if e.id == entry_id), None)
+    if entry is None or entry.period_id not in state.slots:
+        return []
+    slot = state.slots[entry.period_id]
+    sections = {e.section_id for e in siblings(state, entry)}
+    found: list[Substitute] = []
+    for teacher in state.teachers.values():
+        if teacher.id == entry.teacher_id:
+            continue
+        mine = [e for e in state.entries if e.teacher_id == teacher.id and e.period_id in state.slots]
+        if any(e.day == entry.day and _overlap(slot, state.slots[e.period_id]) for e in mine):
+            continue
+        if any(d == entry.day and p in state.slots and _overlap(slot, state.slots[p]) for d, p in teacher.unavailable):
+            continue
+        per_day = _teacher_minutes(state, teacher.id)
+        day_minutes = per_day.get(entry.day, 0) + slot.minutes
+        if day_minutes > teacher.max_daily_minutes:
+            continue
+        week_minutes = sum(per_day.values()) + slot.minutes
+        qualified = entry.subject_id in teacher.qualified
+        notes = []
+        if not qualified:
+            notes.append("Not qualified for this subject")
+        if week_minutes > teacher.max_weekly_minutes:
+            notes.append("Would pass the weekly limit this week")
+        found.append(
+            Substitute(
+                teacher_id=teacher.id,
+                qualified=qualified,
+                knows_section=any(e.section_id in sections for e in mine),
+                day_minutes=day_minutes,
+                week_minutes=week_minutes,
+                notes=tuple(notes),
+            )
+        )
+    names = {t.id: t.name for t in state.teachers.values()}
+    return sorted(found, key=lambda s: (not s.qualified, not s.knows_section, s.day_minutes, names[s.teacher_id]))

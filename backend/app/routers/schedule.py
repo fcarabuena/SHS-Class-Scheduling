@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..deps import CurrentUser, DbSession, EditorUser
@@ -21,13 +21,14 @@ from ..models import (
     SchoolYear,
     Section,
     Semester,
+    SolverJob,
     Subject,
     Teacher,
     TeachingAssignment,
     User,
 )
 from ..scheduling import engine as eng
-from ..scheduling import export
+from ..scheduling import export, jobs
 from ..scheduling.state import conflict_json, load_state, overview, pick_room
 from ..services import audit, check_references, commit, get_owned
 
@@ -69,6 +70,13 @@ class EntryUpdate(BaseModel):
     period_id: int | None = None
     room_id: int | None = None
     pinned: bool | None = None
+
+
+class SolveIn(BaseModel):
+    semester_id: int | None = None
+    # "rebuild" keeps pinned classes and re-places the rest; "fill" keeps everything already placed.
+    mode: str = Field(default="rebuild", pattern="^(rebuild|fill)$")
+    time_limit: int = Field(default=30, ge=5, le=300)
 
 
 class CheckIn(BaseModel):
@@ -672,3 +680,155 @@ def export_schedule(
         media_type=media_type,
         headers={"Content-Disposition": f'attachment; filename="timetable-by-{view}.{format}"'},
     )
+
+
+# --- automatic scheduling ---------------------------------------------------
+
+
+def _job_json(job: SolverJob) -> dict[str, Any]:
+    result = dict(job.result or {})
+    for private in ("base", "kept_ids", "new_entries"):
+        result.pop(private, None)
+    return {
+        "id": job.id,
+        "semester_id": job.semester_id,
+        "status": job.status,
+        "mode": job.mode,
+        "time_limit": job.time_limit,
+        "progress": job.progress,
+        "result": result or None,
+        "error": job.error,
+        "created_at": job.created_at,
+        "finished_at": job.finished_at,
+        "applied_at": job.applied_at,
+    }
+
+
+def _refresh(db: Session, job: SolverJob) -> SolverJob:
+    """A job left unfinished by a server restart can never finish; say so."""
+    if job.status in jobs.ACTIVE and not jobs.is_running_here(job.id):
+        job.status = "failed"
+        job.error = "The server restarted while this was running. Please start it again."
+        db.commit()
+    return job
+
+
+@router.post("/solver/jobs", status_code=202)
+def start_solver(data: SolveIn, db: DbSession, user: EditorUser):
+    """Starts generating a timetable in the background. Nothing is saved until it is applied."""
+    semester = get_semester(db, user.school_id, data.semester_id)
+    running = db.scalars(
+        select(SolverJob).where(SolverJob.school_id == user.school_id, SolverJob.status.in_(jobs.ACTIVE))
+    ).all()
+    if any(_refresh(db, job).status in jobs.ACTIVE for job in running):
+        raise _conflict("The automatic scheduler is already running for your school.")
+    job = SolverJob(
+        school_id=user.school_id,
+        semester_id=semester.id,
+        user_id=user.id,
+        status="queued",
+        mode=data.mode,
+        time_limit=data.time_limit,
+    )
+    db.add(job)
+    db.flush()
+    audit(db, user, "start", "solver_job", job.id, {"summary": f"Automatic scheduling started ({data.mode}, up to {data.time_limit} s)"})
+    commit(db)
+    jobs.submit(job.id)
+    return _job_json(job)
+
+
+@router.get("/solver/jobs/latest")
+def latest_solver_job(db: DbSession, user: CurrentUser, semester_id: int | None = None):
+    semester = get_semester(db, user.school_id, semester_id)
+    job = db.scalars(
+        select(SolverJob)
+        .where(SolverJob.school_id == user.school_id, SolverJob.semester_id == semester.id)
+        .order_by(SolverJob.id.desc())
+    ).first()
+    return _job_json(_refresh(db, job)) if job else None
+
+
+@router.get("/solver/jobs/{job_id}")
+def get_solver_job(job_id: int, db: DbSession, user: CurrentUser):
+    return _job_json(_refresh(db, get_owned(db, SolverJob, job_id, user.school_id)))
+
+
+@router.post("/solver/jobs/{job_id}/cancel")
+def cancel_solver_job(job_id: int, db: DbSession, user: EditorUser):
+    """Stops the search. The best timetable found so far is kept as the result."""
+    job = _refresh(db, get_owned(db, SolverJob, job_id, user.school_id))
+    if job.status in jobs.ACTIVE:
+        jobs.request_stop(job.id)
+    return _job_json(job)
+
+
+@router.post("/solver/jobs/{job_id}/apply")
+def apply_solver_job(job_id: int, db: DbSession, user: EditorUser):
+    """Replaces the timetable with the generated one."""
+    job = get_owned(db, SolverJob, job_id, user.school_id)
+    if job.status != "done" or not job.result:
+        raise _conflict("This run has no finished timetable to apply.")
+    if job.applied_at is not None:
+        raise _conflict("This timetable was already applied.")
+    semester = db.get(Semester, job.semester_id)
+    state = load_state(db, user.school_id, semester)
+    if jobs.fingerprint(state) != job.result["base"]:
+        raise _conflict("The timetable or teacher loading changed after this was generated. Run the scheduler again.")
+    kept = set(job.result["kept_ids"])
+    removed = 0
+    for row in db.scalars(
+        select(ScheduleEntry).where(ScheduleEntry.school_id == user.school_id, ScheduleEntry.semester_id == semester.id)
+    ):
+        if row.id not in kept:
+            db.delete(row)
+            removed += 1
+    db.flush()
+    new_entries = job.result["new_entries"]
+    db.add_all(ScheduleEntry(school_id=user.school_id, semester_id=semester.id, **values) for values in new_entries)
+    job.applied_at = func.now()
+    summary = f"Generated timetable applied: {len(new_entries)} class(es) placed, {removed} replaced, {len(kept)} kept"
+    audit(db, user, "apply", "solver_job", job.id, {"summary": summary})
+    commit(db)
+    return _respond(db, user, semester)
+
+
+# --- substitution finder ----------------------------------------------------
+
+
+@router.get("/substitutes")
+def substitutes(teacher_id: int, day_of_week: int, db: DbSession, user: CurrentUser, semester_id: int | None = None):
+    """For an absent teacher on one day: each class and who could cover it."""
+    get_owned(db, Teacher, teacher_id, user.school_id)
+    semester = get_semester(db, user.school_id, semester_id)
+    state = load_state(db, user.school_id, semester)
+    mine = [e for e in state.entries if e.teacher_id == teacher_id and e.day == day_of_week and e.period_id in state.slots]
+    classes = []
+    seen: set[Any] = set()
+    for entry in sorted(mine, key=lambda e: (state.slots[e.period_id].start, e.id)):
+        key = eng._class_key(entry)
+        if key in seen:
+            continue  # a combined class is covered once
+        seen.add(key)
+        members = eng.siblings(state, entry)
+        classes.append(
+            {
+                "entry_id": entry.id,
+                "period_id": entry.period_id,
+                "subject_id": entry.subject_id,
+                "room_id": entry.room_id,
+                "section_ids": [e.section_id for e in members],
+                "candidates": [
+                    {
+                        "teacher_id": c.teacher_id,
+                        "qualified": c.qualified,
+                        "knows_section": c.knows_section,
+                        "day_hours": round(c.day_minutes / 60, 2),
+                        "week_hours": round(c.week_minutes / 60, 2),
+                        "notes": list(c.notes),
+                    }
+                    for c in eng.find_substitutes(state, entry.id)
+                ],
+            }
+        )
+    return {"teacher_id": teacher_id, "day_of_week": day_of_week, "classes": classes}

@@ -1,6 +1,7 @@
 """Teacher loading, timetable editing, conflicts, export and audit through the API."""
 
 import io
+import time
 
 import pytest
 from openpyxl import load_workbook
@@ -439,3 +440,139 @@ def test_export_to_pdf_and_bad_requests(admin, world, other_school):
     assert admin.get("/api/schedule/export?view=teacher&format=pdf").status_code == 404  # nobody teaches yet
     theirs = other_school.create("/api/rooms", code="X", name="Their Room", capacity=30)
     assert admin.get(f"/api/schedule/export?view=room&id={theirs['id']}").status_code == 404
+
+
+# --- automatic scheduling -----------------------------------------------------
+
+
+def run_solver(api: Api, **body) -> dict:
+    job = ok(api.post("/api/solver/jobs", json={"time_limit": 5, **body}), 202)
+    assert job["status"] in ("queued", "running")
+    for _ in range(200):
+        job = ok(api.get(f"/api/solver/jobs/{job['id']}"))
+        if job["status"] in ("done", "failed"):
+            return job
+        time.sleep(0.1)
+    raise AssertionError("the solver job did not finish")
+
+
+def loaded(admin: Api, world: dict) -> dict:
+    """Every subject has a qualified teacher."""
+    data = generate(admin)
+    for section in (world["a"], world["b"]):
+        data = assign(admin, data, section, world["math"], world["ben"])
+        data = assign(admin, data, section, world["sci"], world["ana"])
+        data = assign(admin, data, section, world["ict"], world["ana"])
+    return data
+
+
+def test_solver_job_generates_a_timetable_that_is_applied_on_request(admin, world):
+    loaded(admin, world)
+    job = run_solver(admin)
+    result = job["result"]
+    assert job["status"] == "done" and result["status"] == "complete"
+    assert (result["placed_hours"], result["required_hours"], result["added"]) == (10, 10, 10)
+    assert job["progress"]["placed_hours"] == 10 and result["shortages"] == []
+    assert "new_entries" not in result and "base" not in result
+    assert ok(admin.get("/api/solver/jobs/latest"))["id"] == job["id"]
+
+    assert ok(admin.get("/api/schedule"))["entries"] == []  # nothing saved yet
+    data = ok(admin.post(f"/api/solver/jobs/{job['id']}/apply"))
+    assert len(data["entries"]) == 10 and data["conflicts"] == []
+    assert admin.post(f"/api/solver/jobs/{job['id']}/apply").status_code == 409  # only once
+    logs = ok(admin.get("/api/audit-logs?entity_type=solver_job"))
+    assert [log["action"] for log in logs] == ["apply", "start"]
+    assert logs[0]["changes"]["summary"] == "Generated timetable applied: 10 class(es) placed, 0 replaced, 0 kept"
+
+
+def test_solver_keeps_pinned_classes_and_fill_mode_keeps_everything(admin, world):
+    data = loaded(admin, world)
+    p1, p2, p3 = world["periods"]
+    data = ok(place(admin, data, world["a"], world["math"], 5, p3), 201)
+    data = ok(place(admin, data, world["a"], world["sci"], 5, p2), 201)
+    pinned, loose = entry_at(data, world["a"], 5, p3), entry_at(data, world["a"], 5, p2)
+    ok(admin.put(f"/api/schedule/entries/{pinned['id']}", json={"pinned": True}))
+
+    job = run_solver(admin, mode="rebuild")
+    assert (job["result"]["kept"], job["result"]["removed"], job["result"]["added"]) == (1, 1, 9)
+    data = ok(admin.post(f"/api/solver/jobs/{job['id']}/apply"))
+    ids = {e["id"] for e in data["entries"]}
+    assert pinned["id"] in ids and loose["id"] not in ids and data["conflicts"] == []
+    assert entry_at(data, world["a"], 5, p3)["pinned"] is True
+
+    job = run_solver(admin, mode="fill")
+    assert (job["result"]["kept"], job["result"]["added"]) == (10, 0)
+
+
+def test_solver_explains_what_it_could_not_place(admin, world):
+    teacher = {**world["ana"], "max_daily_hours": 1, "max_weekly_hours": 2}
+    ok(admin.put(f"/api/teachers/{teacher['id']}", json=teacher))
+    loaded(admin, world)
+    job = run_solver(admin)
+    result = job["result"]
+    assert result["status"] == "partial" and result["placed_hours"] == 6  # Ben's 4 h plus Ana's 2 h
+    assert any("Ana Cruz: Assigned 6 h a week; the weekly limit is 2 h." == p for p in result["problems"])
+    assert result["shortages"] and all("could not be placed" in s["message"] for s in result["shortages"])
+    assert any("Ana Cruz would pass the" in s["message"] for s in result["shortages"])
+
+
+def test_stale_result_cannot_be_applied_and_access_is_restricted(admin, world, other_school):
+    data = loaded(admin, world)
+    job = run_solver(admin)
+    ok(place(admin, data, world["a"], world["math"], MON, world["periods"][0]), 201)  # timetable changed meanwhile
+    stale = admin.post(f"/api/solver/jobs/{job['id']}/apply")
+    assert stale.status_code == 409 and "Run the scheduler again" in stale.json()["detail"]
+
+    viewer = add_user(admin, "teacher", "viewer@alpha.example")
+    assert viewer.get(f"/api/solver/jobs/{job['id']}").status_code == 200
+    assert viewer.post("/api/solver/jobs", json={}).status_code == 403
+    assert viewer.post(f"/api/solver/jobs/{job['id']}/apply").status_code == 403
+    assert other_school.get(f"/api/solver/jobs/{job['id']}").status_code == 404
+    assert other_school.post(f"/api/solver/jobs/{job['id']}/apply").status_code == 404
+    assert admin.post("/api/solver/jobs", json={"mode": "shuffle"}).status_code == 422
+    assert admin.post("/api/solver/jobs", json={"time_limit": 9999}).status_code == 422
+
+
+def test_job_interrupted_by_a_restart_is_reported_as_failed(admin, world):
+    from app.db import SessionLocal
+    from app.models import SolverJob
+
+    with SessionLocal() as db:
+        job = SolverJob(school_id=admin.user["school_id"], semester_id=world["semester"]["id"], status="running", mode="fill", time_limit=5)
+        db.add(job)
+        db.commit()
+        job_id = job.id
+    body = ok(admin.get(f"/api/solver/jobs/{job_id}"))
+    assert body["status"] == "failed" and "restarted" in body["error"]
+    assert admin.post("/api/solver/jobs", json={"time_limit": 5}).status_code == 202  # not blocked by the dead job
+    for _ in range(200):
+        if ok(admin.get("/api/solver/jobs/latest"))["status"] == "done":
+            break
+        time.sleep(0.1)
+
+
+# --- substitution finder ------------------------------------------------------
+
+
+def test_substitute_finder_lists_who_can_cover_an_absent_teacher(admin, world):
+    data = loaded(admin, world)
+    p1, p2 = world["periods"][0], world["periods"][1]
+    data = ok(place(admin, data, world["a"], world["sci"], MON, p1), 201)  # Ana
+    data = ok(place(admin, data, world["b"], world["sci"], MON, p2), 201)  # Ana
+    data = ok(place(admin, data, world["b"], world["math"], MON, p1), 201)  # Ben, busy in period 1
+    cara = admin.create("/api/teachers", employee_id="T-3", full_name="Cara Lim", qualified_subject_ids=[world["sci"]["id"]])
+
+    found = ok(admin.get(f"/api/substitutes?teacher_id={world['ana']['id']}&day_of_week={MON}"))
+    first, second = found["classes"]
+    assert (first["period_id"], first["section_ids"]) == (p1["id"], [world["a"]["id"]])
+    assert [c["teacher_id"] for c in first["candidates"]] == [cara["id"]]  # Ben teaches then
+    assert first["candidates"][0] == {
+        "teacher_id": cara["id"], "qualified": True, "knows_section": False, "day_hours": 1, "week_hours": 1, "notes": [],
+    }
+    assert [c["teacher_id"] for c in second["candidates"]] == [cara["id"], world["ben"]["id"]]
+    assert second["candidates"][1]["notes"] == ["Not qualified for this subject"]
+    assert second["candidates"][1]["knows_section"] is True
+
+    assert ok(admin.get(f"/api/substitutes?teacher_id={world['ana']['id']}&day_of_week={TUE}"))["classes"] == []
+    viewer = add_user(admin, "teacher", "viewer@alpha.example")
+    assert viewer.get(f"/api/substitutes?teacher_id={world['ana']['id']}&day_of_week={MON}").status_code == 200
