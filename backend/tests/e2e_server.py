@@ -9,6 +9,7 @@ that is wiped on every start, so e2e runs never touch development data.
 import os
 
 os.environ["POSTGRES_DB"] = "shs_scheduler_e2e"
+os.environ["DATABASE_URL"] = ""  # the throwaway local database, never a hosted one
 os.environ["CORS_ORIGINS"] = "http://localhost:3001"
 os.environ["PUBLIC_APP_URL"] = "http://localhost:3001"
 os.environ["PLATFORM_ADMIN_EMAILS"] = "owner@platform.example"

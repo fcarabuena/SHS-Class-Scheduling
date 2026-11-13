@@ -1,7 +1,8 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import URL, make_url
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
@@ -14,6 +15,9 @@ class Settings(BaseSettings):
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "shs_scheduler"
+    # A hosted database's full connection string (for example from Neon). When set, the
+    # POSTGRES_* values above are ignored.
+    database_url_text: str = Field(default="", validation_alias="DATABASE_URL")
 
     jwt_secret: str
     jwt_algorithm: str = "HS256"
@@ -49,6 +53,9 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> URL:
+        if self.database_url_text:
+            # Used as given (host, SSL options...); only the driver is set to the one this app uses.
+            return make_url(self.database_url_text).set(drivername="postgresql+psycopg")
         return URL.create(
             "postgresql+psycopg",
             username=self.postgres_user,

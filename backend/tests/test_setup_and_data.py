@@ -343,3 +343,14 @@ def test_import_template_download(admin):
     assert response.text.lstrip("﻿").splitlines()[0] == (
         "employee_id,full_name,max_daily_hours,max_weekly_hours,qualified_subjects"
     )
+
+
+def test_hosted_database_connection_string_is_used_as_given():
+    from app.config import Settings
+
+    hosted = Settings(jwt_secret="x", DATABASE_URL="postgresql://app:secret@ep-quiet-1.ap-southeast-1.aws.neon.tech/shs?sslmode=require")
+    url = hosted.database_url
+    assert (url.drivername, url.host, url.username, url.database) == ("postgresql+psycopg", "ep-quiet-1.ap-southeast-1.aws.neon.tech", "app", "shs")
+    assert url.query["sslmode"] == "require"
+    local = Settings(jwt_secret="x", DATABASE_URL="", POSTGRES_DB="local_db")
+    assert (local.database_url.host, local.database_url.database) == ("localhost", "local_db")

@@ -1,19 +1,11 @@
-# Render Blueprint: the database, the API and the web app, all in Singapore (closest to the Philippines).
-# In the Render dashboard choose New > Blueprint and pick this repository. See "Deploying on Render" in README.md.
-
-databases:
-  - name: shs-db
-    plan: basic-256mb # paid: free databases are deleted after 30 days and have no backups
-    region: singapore
-    postgresMajorVersion: "16"
-    databaseName: shs_scheduler
-    user: shs_app
+# Render Blueprint for the API only, on Render's free plan. The website runs on Vercel and the
+# database on Neon (both free). See "Deploying for free" in README.md.
 
 services:
   - type: web
     name: shs-api
     runtime: python
-    plan: starter # free instances sleep after 15 idle minutes, which stops auto-schedule runs and notifications
+    plan: free # sleeps after 15 idle minutes; the first request afterwards takes about a minute
     region: singapore
     rootDir: backend
     buildCommand: pip install -r requirements.txt
@@ -24,17 +16,12 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.10
-      - key: POSTGRES_HOST
-        fromDatabase: { name: shs-db, property: host }
-      - key: POSTGRES_DB
-        fromDatabase: { name: shs-db, property: database }
-      - key: POSTGRES_USER
-        fromDatabase: { name: shs-db, property: user }
-      - key: POSTGRES_PASSWORD
-        fromDatabase: { name: shs-db, property: password }
+      # Neon's connection string (Dashboard > Connect), starting with postgresql://
+      - key: DATABASE_URL
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-      # The web app's address, for example https://shs-app.onrender.com (both keys get the same value).
+      # The website's address on Vercel, for example https://shs-class-scheduling.vercel.app (same value twice).
       - key: CORS_ORIGINS
         sync: false
       - key: PUBLIC_APP_URL
@@ -48,23 +35,4 @@ services:
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: VAPID_SUBJECT
-        sync: false
-      # Optional: only when a payment provider is connected.
-      - key: BILLING_WEBHOOK_SECRET
-        sync: false
-
-  - type: web
-    name: shs-app
-    runtime: node
-    plan: starter
-    region: singapore
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_VERSION
-        value: "26"
-      # The API's address, for example https://shs-api.onrender.com. Read when the app is built:
-      # after changing it, redeploy the web app.
-      - key: NEXT_PUBLIC_API_URL
         sync: false

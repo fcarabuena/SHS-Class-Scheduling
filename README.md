@@ -141,41 +141,61 @@ Interactive API docs: http://localhost:8000/docs
 PostgreSQL runs as a normal process, not a Windows service, so it does not
 start with Windows. `run-backend.ps1` starts it; `scripts\pg-stop.ps1` stops it.
 
-## Deploying on Render
+## Deploying for free
 
-`render.yaml` describes everything Render needs: a PostgreSQL 16 database,
-the API and the web app, all in the Singapore region.
+Three free services, no credit card needed for any of them at the time of
+writing:
 
-**Database: Render Postgres, paid `basic-256mb` plan.** The app is built on
-PostgreSQL, the database sits on Render's private network next to the API,
-and paid plans include point-in-time recovery (restore to any moment in the
-last few days). Do not use Render's free database for a school: it is
-deleted 30 days after creation and has no backups. The two web services use
-the `starter` plan because free instances sleep after 15 idle minutes, which
-would stop auto-schedule runs and student notifications.
+| Part | Free service | Notes |
+|---|---|---|
+| Website (`frontend/`) | **Vercel** Hobby | Built for Next.js; never sleeps |
+| API (`backend/`) | **Render** free web service | Sleeps after 15 idle minutes; the first request afterwards takes about a minute |
+| Database | **Neon** free PostgreSQL | No expiry; 1 GB storage |
 
-1. In the Render dashboard choose **New > Blueprint** and select this
-   repository. Render reads `render.yaml`.
-2. It asks for the values marked `sync: false`. Render names the services
-   `shs-api` and `shs-app`; their addresses are shown on each service page
-   (normally `https://shs-api.onrender.com` and `https://shs-app.onrender.com`).
-   - `CORS_ORIGINS` and `PUBLIC_APP_URL`: the web app's address.
-   - `NEXT_PUBLIC_API_URL`: the API's address.
-   - `PLATFORM_ADMIN_EMAILS`: your email, to manage all schools.
-   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: run
-     `backend\.venv\Scripts\python.exe -m app.push` and paste the two lines.
-     `VAPID_SUBJECT`: `mailto:` plus a contact email.
-   - `BILLING_WEBHOOK_SECRET`: leave empty.
-3. Create the Blueprint. The API applies the database migrations on every
-   start. If an address was not known yet when you entered it, correct it
-   under the service's **Environment** tab and redeploy; the web app must be
-   redeployed after `NEXT_PUBLIC_API_URL` changes.
-4. Open the web app and choose **Register your school**. Do not run the demo
-   seed on the live database.
+The API cannot run on Vercel: auto-schedule runs and notifications keep
+working in the background after a request, which Vercel's functions do not
+allow. Render's own free database is not used because Render deletes it 30
+days after creation.
 
-Render serves both services over HTTPS, which students' phones need to
-follow a section. To use your own domain, add it under each service's
-**Settings > Custom Domains** and update the addresses above.
+Do the steps in this order; each one needs an address from the one before.
+
+**1. Database (Neon).** Sign up at neon.com and create a project, choosing
+the region closest to the Philippines (Singapore) if offered. Under
+**Connect**, copy the connection string (`postgresql://...`).
+
+**2. API (Render).** Sign up at render.com, choose **New > Blueprint** and
+pick this repository; Render reads `render.yaml`. Fill in:
+- `DATABASE_URL`: the Neon connection string.
+- `CORS_ORIGINS` and `PUBLIC_APP_URL`: leave a placeholder such as
+  `https://example.com` for now (you get the real address in step 3).
+- `PLATFORM_ADMIN_EMAILS`: your email.
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: run
+  `backend\.venv\Scripts\python.exe -m app.push` and paste the two lines.
+  `VAPID_SUBJECT`: `mailto:` plus a contact email.
+
+When the deploy finishes, open `https://<your-api>.onrender.com/api/health`;
+it should show `{"status":"ok"}`. The API creates the tables itself.
+
+**3. Website (Vercel).** Sign up at vercel.com with GitHub, choose
+**Add New > Project** and import this repository. Set **Root Directory** to
+`frontend` and add the environment variable `NEXT_PUBLIC_API_URL` = the API
+address from step 2 (no trailing slash). Deploy.
+
+**4. Connect them.** In Render, set `CORS_ORIGINS` and `PUBLIC_APP_URL` to
+the Vercel address (for example `https://shs-class-scheduling.vercel.app`)
+and save; Render redeploys the API. Open the Vercel address and choose
+**Register your school**. Do not run the demo seed on the live database.
+
+Both services use HTTPS, which students' phones need to follow a section.
+Every push to `main` redeploys both automatically.
+
+**Free-tier limits to know.** The API sleeps when nobody uses it for 15
+minutes, so the first visitor after a quiet spell waits about a minute.
+Auto-schedule is slower on the free API's small share of a CPU; keep its
+time limit generous. Vercel's free Hobby plan is for non-commercial use; if
+you start charging schools, move to a paid plan. Neon's free plan has 1 GB of
+storage, ample for many schools' timetables, but no long-term backups: export
+the data now and then (`pg_dump` with the Neon connection string).
 
 ## Tests
 

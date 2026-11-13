@@ -3,6 +3,7 @@
 import os
 
 os.environ["POSTGRES_DB"] = "shs_scheduler_test"
+os.environ["DATABASE_URL"] = ""  # never follow a hosted connection string from .env into the tests
 
 import psycopg  # noqa: E402
 import pytest  # noqa: E402
@@ -19,7 +20,7 @@ PASSWORD = "Str0ng-Passw0rd!"
 
 @pytest.fixture(scope="session", autouse=True)
 def _database():
-    assert settings.postgres_db.endswith("_test"), "refusing to run tests on a non-test database"
+    assert settings.database_url.database.endswith("_test"), "refusing to run tests on a non-test database"
     with psycopg.connect(
         host=settings.postgres_host,
         port=settings.postgres_port,
