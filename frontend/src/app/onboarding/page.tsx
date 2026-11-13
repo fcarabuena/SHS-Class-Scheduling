@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { Alert, Badge, Button, inputClass, Spinner, TextField } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
@@ -607,13 +607,20 @@ function StrandsStep({ onBack }: StepProps) {
 // --- wizard shell --------------------------------------------------------------
 
 export default function OnboardingPage() {
+  // The query string is only known in the browser, so the wizard renders inside a Suspense boundary.
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Wizard />
+    </Suspense>
+  );
+}
+
+function Wizard() {
   const { user, school, loading, isAdmin } = useAuth();
   const router = useRouter();
-  // "?step=bell" (from the dashboard) opens the bell schedule directly. Read once on the client;
-  // nothing step-dependent renders before sign-in is restored, so server and client agree.
-  const [step, setStep] = useState(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("step") === "bell" ? 3 : 0,
-  );
+  // "?step=bell" (the dashboard's "Edit times") opens the bell schedule directly.
+  const opensAtBell = useSearchParams().get("step") === "bell";
+  const [step, setStep] = useState(opensAtBell ? 3 : 0);
 
   useEffect(() => {
     if (loading) return;

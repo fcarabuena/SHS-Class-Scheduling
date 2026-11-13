@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from . import push  # noqa: F401  (registers the timetable-change listener)
 from .config import settings
 from .routers import auth, crud, imports, platform, schedule, school, share, templates
 from .services import integrity_message

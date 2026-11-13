@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # Shared secret a payment provider signs its webhook calls with. Empty = webhook off.
     billing_webhook_secret: str = ""
 
+    # Web push for people who follow a section's timetable. Empty = following is off.
+    # Generate a pair with: python -m app.push
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    # A contact the push services can reach about this server (mailto: or https:).
+    vapid_subject: str = "mailto:noreply@example.com"
+
     # Rate limits, as "attempts/seconds".
     rate_limit_login: str = "10/300"
     rate_limit_register: str = "5/3600"

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Alert, Button, Spinner } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 
+import { FollowPanel } from "./FollowPanel";
+
 type Shared = {
   school: string;
   heading: string;
@@ -12,6 +14,7 @@ type Shared = {
   subtitle: string;
   days: string[];
   rows: { label: string; time: string; is_break: boolean; cells: string[][] }[];
+  push_key: string | null;
 };
 
 export function SharedTimetable({ token }: { token: string }) {
@@ -35,6 +38,7 @@ export function SharedTimetable({ token }: { token: string }) {
 
   return (
     <main className="mx-auto max-w-6xl space-y-4 px-4 py-8">
+      <link rel="manifest" href={`/share/${encodeURIComponent(token)}/manifest.webmanifest`} />
       <div className="border-t-4 border-red-600 bg-primary-700 px-5 py-4 text-white print:border-0 print:bg-white print:px-0 print:text-stone-900">
         <p className="text-xs uppercase tracking-wider text-accent print:text-stone-600">{data.school}</p>
         <h1 className="mt-1 text-[1.75rem] leading-tight">{data.title}</h1>
@@ -42,6 +46,7 @@ export function SharedTimetable({ token }: { token: string }) {
           {data.subtitle} · {data.heading}
         </p>
       </div>
+      <FollowPanel token={token} title={data.title} pushKey={data.push_key} />
       <div className="flex justify-end print:hidden">
         <Button variant="secondary" onClick={() => window.print()}>
           Print

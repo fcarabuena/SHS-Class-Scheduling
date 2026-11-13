@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { api, ApiError } from "@/lib/api";
+import { api, API_URL, ApiError } from "@/lib/api";
 import type { ViewKind } from "@/lib/schedule";
 
 import { Alert, Badge, Button, Field, inputClass, Modal } from "./ui";
@@ -12,6 +12,8 @@ type ShareLink = {
   view: ViewKind;
   target_id: number;
   url: string;
+  token: string;
+  followers: number;
   expires_at: string | null;
   status: "active" | "expired" | "revoked";
   view_count: number;
@@ -107,6 +109,7 @@ export function ShareDialog({ view, targetId, label, semesterId, onClose }: Prop
                   <span className="text-xs text-stone-600">
                     {link.expires_at ? `Until ${new Date(link.expires_at).toLocaleDateString()}` : "No end date"} · opened{" "}
                     {link.view_count} time{link.view_count === 1 ? "" : "s"}
+                    {view === "section" && ` · ${link.followers} following`}
                   </span>
                   <span className="ml-auto flex gap-2">
                     <Button variant="secondary" small onClick={() => copy(link)}>
@@ -116,6 +119,26 @@ export function ShareDialog({ view, targetId, label, semesterId, onClose }: Prop
                       Turn off
                     </Button>
                   </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a small SVG from the API, not a page image */}
+                  <img
+                    src={`${API_URL}/api/public/timetable/${link.token}/qr.svg`}
+                    alt={`QR code of the link to ${label}`}
+                    className="h-28 w-28 border border-stone-200"
+                  />
+                  <p className="text-xs text-stone-600">
+                    Print this and post it in the classroom. Students scan it to open the timetable, and can tap Follow to be
+                    notified of changes or add it to their phone calendar. They need no account.{" "}
+                    <a
+                      className="text-primary-700 underline"
+                      href={`${API_URL}/api/public/timetable/${link.token}/qr.svg`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open QR code to print
+                    </a>
+                  </p>
                 </div>
               </li>
             ))}

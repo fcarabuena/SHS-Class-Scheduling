@@ -32,21 +32,32 @@ test("share a timetable publicly, notify the teacher, and manage schools as the 
   // --- public share link ------------------------------------------------------------------
   await signIn(page, OWNER);
   await expect(page.getByText(/Plan:\s*Standard/)).toBeVisible();
+  await page.getByRole("link", { name: "Edit times" }).click(); // straight to the bell schedule
+  await expect(page.getByRole("heading", { name: "Step 4 of 5: Bell schedule" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to dashboard" }).click();
   await page.getByRole("link", { name: "Timetable" }).click();
   await page.getByRole("button", { name: "Share link" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Create link" }).click();
   const url = await dialog.getByLabel("Share link").inputValue();
   expect(url).toMatch(/^http:\/\/localhost:3001\/share\/[\w-]{40,}$/);
+  await expect(dialog.getByRole("img", { name: "QR code of the link to 11-A" })).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/19-share-dialog.png`, fullPage: true });
 
-  const visitor = await browser.newContext(); // a stranger: no session at all
+  // A stranger with no session. Headless Chromium has no notification support and always reports
+  // "denied"; make it report "default", the state a real phone starts in, before the student is asked.
+  const visitor = await browser.newContext();
+  await visitor.addInitScript(() => Object.defineProperty(Notification, "permission", { get: () => "default" }));
   const publicPage = await visitor.newPage();
   await publicPage.goto(url);
   await expect(publicPage.getByRole("heading", { name: "11-A" })).toBeVisible();
   await expect(publicPage.getByText("Operator Test School")).toBeVisible();
   await expect(publicPage.getByRole("cell", { name: /MATH\s*Ana Cruz/ })).toBeVisible();
   await expect(publicPage.getByRole("link", { name: "Dashboard" })).toHaveCount(0);
+  await expect(publicPage.getByRole("button", { name: "Follow: notify me of changes" })).toBeVisible();
+  const calendar = await publicPage.getByRole("link", { name: "Add to phone calendar" }).getAttribute("href");
+  expect(calendar).toMatch(/^webcal:\/\/localhost:8001\/api\/public\/timetable\/[\w-]+\/calendar\.ics$/);
+  expect(await (await request.get(calendar!.replace("webcal:", "http:"))).text()).toContain("SUMMARY:MATH");
   await publicPage.screenshot({ path: `${SHOTS}/20-public-timetable.png`, fullPage: true });
 
   await dialog.getByRole("button", { name: "Turn off" }).click();
@@ -70,6 +81,12 @@ test("share a timetable publicly, notify the teacher, and manage schools as the 
   await page.screenshot({ path: `${SHOTS}/21-all-schools.png`, fullPage: true });
   const blocked = await request.post(`${API}/api/auth/login`, { data: { email: "admin@second.example", password: PASSWORD } });
   expect(blocked.status()).toBe(403);
+
+  // --- automatic teacher loading ---------------------------------------------------------------
+  await page.getByRole("link", { name: "Teacher loading" }).click();
+  await page.getByRole("button", { name: "Auto-assign teachers" }).click();
+  await expect(page.getByText("Assigned a teacher to 3 subjects.")).toBeVisible();
+  await expect(page.getByText("0 of 4 without a teacher")).toBeVisible();
 
   // --- the teacher's notifications -------------------------------------------------------------
   await page.getByRole("button", { name: "Sign out" }).click();

@@ -196,6 +196,8 @@ completely separate from every other school's.
    schools that share rooms.
 4. **Bell schedule** - for each shift, type a period length and count and
    press **Generate**, then adjust any row. Tick **Break** for recess or lunch.
+   Times can be any minute (07:30, 08:50) and periods can differ in length.
+   To change times later, use **Edit times** on the Dashboard.
 5. **Strands** - tick the strands you offer to load starter subjects and a
    sample curriculum, or skip and enter your own.
 
@@ -235,7 +237,11 @@ Open **Teacher loading**.
 1. **Add subjects from curriculum** lists, for every section, the subjects
    its strand and grade take this semester. Use **Add subject** for anything
    extra, **Remove** for anything not offered.
-2. Pick a teacher for each row. Qualified teachers are listed first, each
+2. **Auto-assign teachers** gives every subject still without a teacher
+   the least-loaded qualified teacher who has room within the weekly limit
+   and the time the daily limit and availability allow. Subjects few teachers
+   can take are filled first; choices already made are never changed. Or
+   pick a teacher for each row yourself. Qualified teachers are listed first, each
    with their current load. The **Teacher loads** panel updates at once and
    turns amber when a teacher is over the weekly limit, cannot fit the hours
    inside the daily limit and available time, or is not qualified.
@@ -316,6 +322,21 @@ that one timetable, read-only, without signing in, always up to date, and can
 print it. Choose how long it works (until turned off, 7 or 30 days, or a
 semester). **Turn off** stops a link at once. The dialog shows how often each
 link was opened.
+
+Each link also has a **QR code** to print and post in the classroom.
+
+**Students follow their section without an account.** On a section's
+shared page a student can:
+
+- tap **Follow: notify me of changes** to get a phone or browser
+  notification whenever the section's timetable changes (one message per
+  burst of edits, about a minute after the last one);
+- tap **Add to phone calendar** to subscribe; the calendar app keeps the
+  classes up to date by itself for the whole semester.
+
+Nothing about the student is stored: no name, email or account, only the
+address the browser gives for notifications. Turning a link off forgets
+every device that followed it.
 
 A shared timetable shows the teachers' names and rooms in it, so only share
 what may be public.
@@ -575,6 +596,10 @@ is the teacher loading; `SCHEDULE_ENTRY` is one class meeting on the timetable.
 - **Public links.** Long random tokens (not guessable), one timetable each,
   revocable, optionally expiring, and dead while a school is suspended. The
   platform administrator sees counts only.
+- **Students following a section.** No student accounts and no student
+  data: a following device is stored only as its browser push address and
+  encryption keys, deleted when the link is turned off or the device stops
+  following. Notifications are only sent to the known browser push services.
 - **Audit log.** Every create, update, delete and import, and every
   timetable and teacher loading change, is recorded with who and when
   (admin-only **Change history** page, or `GET /api/audit-logs`).
@@ -666,6 +691,12 @@ These are configurable data in the app; the shipped values are placeholders.
 - Rate limits are kept in memory, so they reset when the API restarts and
   would need a shared store or the reverse proxy with several API processes.
 - Plans limit sections and teachers only. No payment provider is connected.
+- Following needs the site on HTTPS (localhost works for testing). On an
+  iPhone the student must first add the page to the Home Screen. Waiting
+  notifications are lost if the API restarts within that minute.
+- Calendar apps refresh subscribed calendars on their own schedule (Google
+  Calendar can take several hours). The calendar repeats every week of the
+  semester and does not skip holidays. Times are Philippine time.
 - There is no exam timetable yet (the regular weekly timetable only).
 - Editing an existing school year's dates is API-only.
 - `docker-compose.yml` has not been run on this machine.

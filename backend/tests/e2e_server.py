@@ -19,7 +19,11 @@ os.environ["RATE_LIMIT_REGISTER"] = "1000/60"
 import psycopg  # noqa: E402
 import uvicorn  # noqa: E402
 
+from app import push  # noqa: E402
 from app.config import settings  # noqa: E402
+
+# Throwaway keys so the public page offers "Follow" (nothing is actually sent in the tests).
+settings.vapid_public_key, settings.vapid_private_key = push.new_keys()
 from app.db import engine  # noqa: E402
 from app.models import Base  # noqa: E402
 

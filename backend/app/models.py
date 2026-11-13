@@ -456,6 +456,28 @@ class ShareLink(Base):
     view_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     last_viewed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
+    @property
+    def url(self) -> str:
+        from .config import settings
+
+        return f"{settings.public_app_url.rstrip('/')}/share/{self.token}"
+
+
+class PushSubscription(Base):
+    """A device that follows a shared timetable. No name and no account: only the
+    address its browser gave for push messages, and the keys to encrypt them."""
+
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (UniqueConstraint("share_link_id", "endpoint"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = _school_fk()
+    share_link_id: Mapped[int] = mapped_column(ForeignKey("share_links.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1000))
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
 
 class Notification(Base):
     """An in-app message for one user."""
