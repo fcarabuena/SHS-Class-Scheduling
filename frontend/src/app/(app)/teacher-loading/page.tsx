@@ -61,6 +61,24 @@ export default function TeacherLoadingPage() {
     }
   }
 
+  async function autoAssign() {
+    setNotice("");
+    const result = await run(() =>
+      api<Overview & { assigned: number; left: number }>("/api/assignments/auto-assign", {
+        method: "POST",
+        body: { semester_id: data!.semester_id },
+      }),
+    );
+    if (result) {
+      setNotice(
+        `Assigned a teacher to ${result.assigned} subject${result.assigned === 1 ? "" : "s"}.` +
+          (result.left
+            ? ` ${result.left} still need one: no qualified teacher has room left. Add qualifications or teachers, or raise a limit.`
+            : ""),
+      );
+    }
+  }
+
   function partners(assignment: Assignment): string {
     return data!.assignments
       .filter((a) => a.combined_group_id === assignment.combined_group_id && a.id !== assignment.id)
@@ -131,6 +149,9 @@ export default function TeacherLoadingPage() {
               <div className="ml-auto flex flex-wrap gap-2">
                 <Button variant="secondary" disabled={busy} onClick={generate}>
                   Add subjects from curriculum
+                </Button>
+                <Button variant="secondary" disabled={busy || unassigned === 0} onClick={autoAssign}>
+                  Auto-assign teachers
                 </Button>
                 <Button disabled={busy} onClick={() => setAdding(true)}>
                   Add subject

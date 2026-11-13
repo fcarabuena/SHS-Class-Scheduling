@@ -673,3 +673,38 @@ def find_substitutes(state: State, entry_id: int) -> list[Substitute]:
         )
     names = {t.id: t.name for t in state.teachers.values()}
     return sorted(found, key=lambda s: (not s.qualified, not s.knows_section, s.day_minutes, names[s.teacher_id]))
+
+
+# --- automatic teacher loading ----------------------------------------------
+
+
+def suggest_teachers(state: State, candidates: Iterable[int] | None = None) -> dict[int, int]:
+    """A teacher for every requirement that has none: {assignment id: teacher id}.
+
+    Picks the least-loaded qualified teacher who still has room within the
+    weekly limit and the time the daily limit and availability allow. Subjects
+    the fewest teachers can take are filled first. A combined class gets one
+    teacher and counts once. Existing choices are never changed.
+    """
+    allowed = set(state.teachers) if candidates is None else set(candidates) & set(state.teachers)
+    loads = {load.teacher_id: load for load in teacher_loads(state)}
+    used = {t: loads[t].assigned_minutes for t in allowed}
+    units: dict[Hashable, list[Requirement]] = defaultdict(list)
+    for req in state.requirements:
+        if req.teacher_id is None and req.id is not None:
+            units[("g", req.group) if req.group is not None else ("r", req.id)].append(req)
+
+    def qualified(subject_id: int) -> list[TeacherInfo]:
+        return [state.teachers[t] for t in allowed if subject_id in state.teachers[t].qualified]
+
+    picked: dict[int, int] = {}
+    hardest_first = sorted(units.values(), key=lambda rs: (len(qualified(rs[0].subject_id)), -max(r.minutes for r in rs), rs[0].id))
+    for reqs in hardest_first:
+        minutes = max(r.minutes for r in reqs)
+        fits = [t for t in qualified(reqs[0].subject_id) if used[t.id] + minutes <= loads[t.id].capacity_minutes]
+        if not fits:
+            continue
+        teacher = min(fits, key=lambda t: (used[t.id], t.name, t.id))
+        used[teacher.id] += minutes
+        picked.update((r.id, teacher.id) for r in reqs)
+    return picked

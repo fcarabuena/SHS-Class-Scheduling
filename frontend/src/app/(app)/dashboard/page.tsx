@@ -94,7 +94,14 @@ export default function DashboardPage() {
       {activeYear && <ScheduleDashboard />}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-stone-900">Shifts and bell schedule</h2>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold text-stone-900">Shifts and bell schedule</h2>
+          {isAdmin && (
+            <Link href="/onboarding?step=bell" className="text-sm text-primary-700 underline">
+              Edit times
+            </Link>
+          )}
+        </div>
         {data.shifts.length === 0 && <p className="text-sm text-stone-600">No shifts have been set up.</p>}
         <div className="grid gap-4 lg:grid-cols-2">
           {data.shifts.map((shift) => (

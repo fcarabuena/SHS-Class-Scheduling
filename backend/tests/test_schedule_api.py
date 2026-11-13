@@ -631,3 +631,25 @@ def test_signatories_are_validated_and_printed_under_exports(admin, world):
     ok(admin.put("/api/school", json={"name": "Alpha Test School", "settings": {"signatories": []}}))
     without = admin.get("/api/schedule/export?view=section&format=pdf")
     assert len(with_signatures.content) > len(without.content)
+
+
+def test_auto_assign_fills_only_subjects_without_a_teacher(admin, world):
+    admin.create("/api/teachers", employee_id="T-9", full_name="Away Teacher", is_active=False, qualified_subject_ids=[world["ict"]["id"]])
+    data = generate(admin)
+    data = assign(admin, data, world["a"], world["math"], world["ben"])  # chosen by hand: kept
+    p1 = world["periods"][0]
+    data = ok(place(admin, data, world["b"], world["sci"], MON, p1), 201)  # placed before it had a teacher
+
+    data = ok(admin.post("/api/assignments/auto-assign", json={}))
+    assert (data["assigned"], data["left"]) == (5, 0)
+    teacher = {(a["section_id"], a["subject_id"]): a["teacher_id"] for a in data["assignments"]}
+    assert teacher[(world["a"]["id"], world["math"]["id"])] == world["ben"]["id"]
+    assert teacher[(world["a"]["id"], world["ict"]["id"])] == world["ana"]["id"]  # never the inactive teacher
+    assert entry_at(data, world["b"], MON, p1)["teacher_id"] == world["ana"]["id"]
+    assert all(load["status"] != "over" for load in data["teacher_loads"])
+    log = ok(admin.get("/api/audit-logs?entity_type=assignment"))[0]
+    assert log["changes"]["summary"] == "Teachers assigned automatically to 5 subject(s); 0 still without a teacher"
+
+    assert ok(admin.post("/api/assignments/auto-assign", json={}))["assigned"] == 0
+    viewer = add_user(admin, "teacher", "viewer@alpha.example")
+    assert viewer.post("/api/assignments/auto-assign", json={}).status_code == 403

@@ -130,17 +130,8 @@ def seed_schedule(db: Session, school_id: int) -> int:
     db.add_all(rows.values())
     db.flush()
 
-    state = load_state(db, school_id, semester)
-    load = {teacher_id: 0 for teacher_id in state.teachers}
-    for req in state.requirements:
-        able = [
-            t for t in state.teachers.values()
-            if req.subject_id in t.qualified and load[t.id] + req.minutes <= t.max_weekly_minutes
-        ]
-        if able:
-            teacher = min(able, key=lambda t: (load[t.id], t.id))
-            load[teacher.id] += req.minutes
-            rows[(req.section_id, req.subject_id)].teacher_id = teacher.id
+    for assignment_id, teacher_id in eng.suggest_teachers(load_state(db, school_id, semester)).items():
+        db.get(TeachingAssignment, assignment_id).teacher_id = teacher_id
     db.flush()
 
     state = load_state(db, school_id, semester)

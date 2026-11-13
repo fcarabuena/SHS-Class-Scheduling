@@ -20,6 +20,7 @@ from app.scheduling.engine import (
     detect,
     errors,
     find_substitutes,
+    suggest_teachers,
     suggest_fixes,
     teacher_loads,
 )
@@ -398,3 +399,30 @@ def test_substitutes_are_ranked_qualified_first_then_familiar_then_lightest_day(
     assert found[0].knows_section and found[0].day_minutes == 120
     assert found[2].notes == ("Would pass the weekly limit this week",)
     assert find_substitutes(state, 999) == []
+
+
+# --- automatic teacher loading ------------------------------------------------
+
+
+def test_suggest_teachers_fills_gaps_hardest_first_and_least_loaded():
+    reqs = [
+        Requirement(S_A, MATH, 240, id=1),
+        Requirement(S_B, MATH, 240, id=2),
+        Requirement(S_A, ICT, 240, id=3),  # only Ana can teach ICT, so it is filled first
+        Requirement(S_B, SCI, 240, BEN, id=4),  # already chosen: never changed
+    ]
+    assert suggest_teachers(make_state([], reqs)) == {3: ANA, 1: ANA, 2: BEN}
+
+    tight = make_state([], reqs)
+    tight.teachers[ANA] = TeacherInfo(ANA, "Ana", 360, 300, frozenset({MATH, SCI, ICT}))  # room for one class only
+    assert suggest_teachers(tight) == {3: ANA, 1: BEN, 2: BEN}
+    assert suggest_teachers(tight, candidates=[BEN]) == {1: BEN, 2: BEN}  # ICT: nobody left who can teach it
+
+
+def test_suggest_teachers_gives_a_combined_class_one_teacher_counted_once():
+    reqs = [Requirement(S_A, MATH, 240, group=7, id=1), Requirement(S_B, MATH, 240, group=7, id=2), Requirement(S_A, SCI, 240, id=3)]
+    state = make_state([], reqs)
+    # Each teacher has room for exactly one 4 h class: the combined class only fits if it counts once.
+    state.teachers[ANA] = TeacherInfo(ANA, "Ana", 360, 240, frozenset({MATH, SCI}))
+    state.teachers[BEN] = TeacherInfo(BEN, "Ben", 360, 240, frozenset({MATH, SCI}))
+    assert suggest_teachers(state) == {1: ANA, 2: ANA, 3: BEN}

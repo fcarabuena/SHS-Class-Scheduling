@@ -609,7 +609,11 @@ function StrandsStep({ onBack }: StepProps) {
 export default function OnboardingPage() {
   const { user, school, loading, isAdmin } = useAuth();
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  // "?step=bell" (from the dashboard) opens the bell schedule directly. Read once on the client;
+  // nothing step-dependent renders before sign-in is restored, so server and client agree.
+  const [step, setStep] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("step") === "bell" ? 3 : 0,
+  );
 
   useEffect(() => {
     if (loading) return;
@@ -651,7 +655,15 @@ export default function OnboardingPage() {
                   : "border-stone-200 text-stone-500"
             }`}
           >
-            <span className="block sm:inline">{index + 1}.</span> {label}
+            {school.onboarding_completed ? (
+              <button type="button" className="w-full hover:underline" onClick={() => setStep(index)}>
+                <span className="block sm:inline">{index + 1}.</span> {label}
+              </button>
+            ) : (
+              <>
+                <span className="block sm:inline">{index + 1}.</span> {label}
+              </>
+            )}
           </li>
         ))}
       </ol>

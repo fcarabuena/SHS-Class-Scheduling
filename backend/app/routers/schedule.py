@@ -340,6 +340,27 @@ def generate_assignments(data: SemesterRef, db: DbSession, user: EditorUser):
     return _respond(db, user, semester, created=created)
 
 
+@router.post("/assignments/auto-assign")
+def auto_assign_teachers(data: SemesterRef, db: DbSession, user: EditorUser):
+    """Gives every subject without a teacher the least-loaded qualified teacher who still has room."""
+    semester = get_semester(db, user.school_id, data.semester_id)
+    state = load_state(db, user.school_id, semester)
+    active = db.scalars(select(Teacher.id).where(Teacher.school_id == user.school_id, Teacher.is_active.is_(True)))
+    picked = eng.suggest_teachers(state, active)
+    names = Names(db)
+    for assignment_id, teacher_id in picked.items():
+        row = db.get(TeachingAssignment, assignment_id)
+        row.teacher_id = teacher_id
+        for entry in _entries_of(db, row):  # classes already placed without a teacher
+            entry.teacher_id = teacher_id
+        notify_teacher(db, user.school_id, teacher_id, "loading", "You were given a class", f"{names.klass(row)} is now yours.", "/timetable", user.id)
+    left = sum(1 for r in state.requirements if r.teacher_id is None) - len(picked)
+    summary = f"Teachers assigned automatically to {len(picked)} subject(s); {left} still without a teacher"
+    audit(db, user, "auto_assign", "assignment", None, {"summary": summary})
+    commit(db)
+    return _respond(db, user, semester, assigned=len(picked), left=left)
+
+
 @router.post("/assignments/combine")
 def combine_assignments(data: CombineIn, db: DbSession, user: EditorUser):
     """Teaches the same subject to several sections together as one class."""
