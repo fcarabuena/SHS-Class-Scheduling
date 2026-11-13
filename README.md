@@ -16,7 +16,7 @@ notifications and multi-school administration come in Phase 3.
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 (React 19, TypeScript), Tailwind CSS 4 |
-| Design | Carbon-style look described in `DESIGN.md`, IBM Plex Sans (bundled, no web requests) |
+| Design | Carbon-style layout in a DepEd-style blue, yellow and red palette (`DESIGN.md`), IBM Plex Sans (bundled, no web requests) |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2 |
 | Database | PostgreSQL 16, Alembic migrations |
 | Auth | JWT, argon2 password hashing, three roles |
@@ -310,9 +310,11 @@ teacher loading, and when.
 ## Look and feel
 
 The interface follows `DESIGN.md`: white tiles on a light gray page, charcoal
-text, square corners, no shadows, a charcoal side menu and one green accent.
-Red, yellow and blue appear only for conflicts, warnings and notes, always
-with a text label. All colours, corner sizes and the font are set in one
+text, square corners and no shadows, in a Philippine public-school palette:
+blue as the main colour, a yellow highlight in the blue side menu, and red
+for conflicts. Green means "free" or "done". Status colours always come with
+a text label. The colours are the Philippine flag's; no DepEd seal or logo is
+used, because the app is not an official DepEd product. All colours, corner sizes and the font are set in one
 place, `frontend/src/app/globals.css`; pages never hard-code them.
 
 ## Database schema

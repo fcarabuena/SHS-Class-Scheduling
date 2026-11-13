@@ -317,7 +317,7 @@ function FormField({ field, value, lookups, onChange }: FormFieldProps) {
       <label className={`flex items-center gap-2 self-end pb-2 text-sm text-stone-800 ${span}`}>
         <input
           type="checkbox"
-          className="size-4 accent-emerald-800"
+          className="size-4 accent-primary-800"
           checked={Boolean(value)}
           onChange={(event) => onChange(event.target.checked)}
         />
@@ -339,7 +339,7 @@ function FormField({ field, value, lookups, onChange }: FormFieldProps) {
             <label key={option.value} className="flex items-start gap-2 text-sm text-stone-800">
               <input
                 type="checkbox"
-                className="mt-0.5 size-4 accent-emerald-800"
+                className="mt-0.5 size-4 accent-primary-800"
                 checked={selected.has(option.value)}
                 onChange={(event) => {
                   const next = new Set(selected);

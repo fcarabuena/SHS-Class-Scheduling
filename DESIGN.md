@@ -6,19 +6,22 @@ an analysis of the Carbon Design System look. It is kept unchanged below.
 
 HOW THIS PROJECT APPLIES IT (these notes win over the reference):
 
-1. Accent colour is green, not blue. The app is used by many schools and must
-   not look like another organisation's brand. Use the Carbon green scale
-   (primary #0e6027, hover #044317, bars and marks #198038) wherever the
-   reference says "primary" or IBM Blue.
+1. Colours follow a Philippine public-school (DepEd-style) palette instead of
+   IBM Blue: main colour blue #0038a8 (hover #002d86, side menu #002d86),
+   highlight yellow #fcd116 (on dark blue only: the current-page marker and
+   small labels), red #ce1126 for conflicts and errors. These are the
+   Philippine flag colours. No DepEd seal, logo or wording is used: the app
+   is not an official DepEd product and must not look like one.
+   Green is kept only as a status colour (free slot, done, within limit).
 2. This is a working tool, not a marketing site. Ignore the hero, pricing and
    footer sections. Use the compact sizes: 14px body, 32-40px controls,
    16-24px gaps. The 76px display sizes are never used.
 3. Kept from the reference: white tiles on a #f4f4f4 page, charcoal #161616
-   text, one accent, hairline #e0e0e0 borders, no shadows, square corners
+   text, hairline #e0e0e0 borders, no shadows, square corners
    (0px; 4px only on small tags), IBM Plex Sans at 400 with 600 for emphasis,
-   a charcoal side navigation, 2px focus outlines.
-4. Status colours (red, yellow, blue) are for conflicts, warnings and notes
-   only, always with a text label.
+   2px focus outlines. The side navigation is deep blue, not charcoal.
+4. Status colours (red, amber, light blue, green) are for conflicts, warnings,
+   notes and "all good" only, always with a text label.
 5. The tokens live in frontend/src/app/globals.css. Change colours, corners
    and fonts there, not in individual pages.
 -->

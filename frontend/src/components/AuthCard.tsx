@@ -2,7 +2,7 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-800">
+        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-primary-800">
           Senior High School · Class Scheduling
         </p>
         <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8">

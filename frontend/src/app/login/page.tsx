@@ -49,7 +49,7 @@ export default function LoginPage() {
       </form>
       <p className="mt-6 text-center text-sm text-stone-600">
         Setting up a new school?{" "}
-        <Link href="/register" className="font-medium text-emerald-800 underline">
+        <Link href="/register" className="font-medium text-primary-800 underline">
           Register your school
         </Link>
       </p>

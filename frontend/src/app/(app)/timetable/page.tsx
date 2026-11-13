@@ -223,7 +223,7 @@ export default function TimetablePage() {
               type="button"
               aria-pressed={view === item.value}
               className={`px-3 py-2 text-sm font-medium ${
-                view === item.value ? "bg-emerald-800 text-white" : "bg-white text-stone-700 hover:bg-stone-100"
+                view === item.value ? "bg-primary-800 text-white" : "bg-white text-stone-700 hover:bg-stone-100"
               }`}
               onClick={() => switchView(item.value)}
             >
@@ -380,8 +380,8 @@ export default function TimetablePage() {
                                     aria-pressed={isSelected}
                                     aria-label={`${subjectCode(first.subject_id)}, ${label}${hasError ? ", has a conflict" : ""}${first.pinned ? ", pinned" : ""}`}
                                     className={`w-full rounded border px-1.5 py-1 text-left text-xs leading-tight ${
-                                      hasError ? "border-red-400 bg-red-100 text-red-950" : "border-emerald-300 bg-emerald-100 text-emerald-950"
-                                    } ${isSelected ? "ring-2 ring-emerald-800" : ""} ${canEdit && !first.pinned ? "cursor-grab" : ""}`}
+                                      hasError ? "border-red-400 bg-red-100 text-red-950" : "border-primary-300 bg-primary-100 text-primary-950"
+                                    } ${isSelected ? "ring-2 ring-primary-800" : ""} ${canEdit && !first.pinned ? "cursor-grab" : ""}`}
                                     onClick={() => setPicked(isSelected ? null : { kind: "entry", id: first.id })}
                                     onDragStart={(event) => {
                                       event.dataTransfer.setData("text/plain", String(first.id));
@@ -461,7 +461,7 @@ export default function TimetablePage() {
 
         <aside className="space-y-5 print:hidden">
           {selected && (
-            <section aria-label="Selected class" className="rounded-lg border border-emerald-700 bg-white p-3">
+            <section aria-label="Selected class" className="rounded-lg border border-primary-700 bg-white p-3">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-base font-semibold text-stone-900">
                   {subjectCode(selected.subject_id)} · {sectionName(selected.section_id)}
@@ -598,8 +598,8 @@ export default function TimetablePage() {
                         aria-pressed={isPicked}
                         aria-label={`${title}, ${formatHours(left)} left to place`}
                         className={`flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm ${
-                          isPicked ? "border-emerald-800 bg-emerald-100 ring-1 ring-emerald-800" : "border-stone-200 bg-white"
-                        } ${left === 0 ? "text-stone-400" : "text-stone-900"} ${canEdit ? "cursor-grab hover:border-emerald-700" : ""}`}
+                          isPicked ? "border-primary-800 bg-primary-100 ring-1 ring-primary-800" : "border-stone-200 bg-white"
+                        } ${left === 0 ? "text-stone-400" : "text-stone-900"} ${canEdit ? "cursor-grab hover:border-primary-700" : ""}`}
                         onClick={() => setPicked(isPicked ? null : { kind: "assignment", id: assignment.id })}
                         onDragStart={(event) => {
                           event.dataTransfer.setData("text/plain", String(assignment.id));

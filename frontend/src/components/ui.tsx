@@ -3,7 +3,7 @@
 import { useEffect, useId } from "react";
 
 const BUTTON_STYLES = {
-  primary: "bg-emerald-800 text-white hover:bg-emerald-900 disabled:bg-emerald-800/50",
+  primary: "bg-primary-600 text-white hover:bg-primary-800 disabled:bg-primary-600/50",
   secondary: "border border-stone-500 bg-white text-stone-900 hover:bg-stone-100 disabled:border-stone-300 disabled:text-stone-400",
   danger: "border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:text-red-300",
   ghost: "text-stone-700 hover:bg-stone-200/70 disabled:text-stone-400",

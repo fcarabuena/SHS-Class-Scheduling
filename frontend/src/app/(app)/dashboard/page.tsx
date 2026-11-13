@@ -81,7 +81,7 @@ export default function DashboardPage() {
           <Link
             key={item.key}
             href={item.href}
-            className="rounded-lg border border-stone-200 bg-white p-4 transition-colors hover:border-emerald-700"
+            className="rounded-lg border border-stone-200 bg-white p-4 transition-colors hover:border-primary-700"
           >
             <p className="text-3xl font-semibold tabular-nums text-stone-900">{data.counts[item.key]}</p>
             <p className="mt-1 text-sm text-stone-600">{item.label}</p>

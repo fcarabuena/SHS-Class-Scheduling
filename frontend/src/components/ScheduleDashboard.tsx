@@ -39,7 +39,7 @@ function MeterList({ title, caption, rows, empty }: { title: string; caption: st
                   </span>
                 </div>
                 <div className="mt-1 h-2 overflow-hidden rounded bg-stone-200" aria-hidden="true">
-                  <div className="h-full rounded bg-emerald-600" style={{ width: `${percent}%` }} />
+                  <div className="h-full rounded bg-primary-600" style={{ width: `${percent}%` }} />
                 </div>
               </li>
             );
@@ -52,7 +52,7 @@ function MeterList({ title, caption, rows, empty }: { title: string; caption: st
 
 function Tile({ value, label, href, note }: { value: string; label: string; href: string; note?: string }) {
   return (
-    <Link href={href} className="rounded-lg border border-stone-200 bg-white p-4 transition-colors hover:border-emerald-700">
+    <Link href={href} className="rounded-lg border border-stone-200 bg-white p-4 transition-colors hover:border-primary-700">
       <p className="text-3xl font-semibold tabular-nums text-stone-900">{value}</p>
       <p className="mt-1 text-sm text-stone-600">{label}</p>
       {note && <p className="mt-1 text-xs text-stone-500">{note}</p>}

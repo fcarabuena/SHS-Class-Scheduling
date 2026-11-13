@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 /*
- * Look and feel: see DESIGN.md at the project root (Carbon-style: white tiles
- * on a light gray page, charcoal text, one green accent, square corners, no
- * shadows). The app's pages use Tailwind's stone / emerald / red / amber / sky
- * names; they are mapped to the design's palette here so one edit restyles
- * every page.
+ * Look and feel: see DESIGN.md at the project root. Carbon-style layout (white
+ * tiles on a light gray page, charcoal text, square corners, no shadows) in a
+ * Philippine public-school palette: blue as the main colour, yellow as the
+ * highlight, red for problems. Pages use the names primary / accent / stone /
+ * emerald / red / amber / sky; they are mapped to actual colours here, so one
+ * edit restyles every page.
  */
 @theme {
   --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -31,7 +32,23 @@
   --color-stone-900: #161616;
   --color-stone-950: #161616;
 
-  /* The one accent: Carbon green */
+  /* Main colour: Philippine flag blue (#0038a8) and its tints and shades */
+  --color-primary-50: #eef3fc;
+  --color-primary-100: #dbe6fa;
+  --color-primary-200: #b7cdf5;
+  --color-primary-300: #86a8ec;
+  --color-primary-400: #4f7ddc;
+  --color-primary-500: #1f55c4;
+  --color-primary-600: #0038a8;
+  --color-primary-700: #0038a8;
+  --color-primary-800: #002d86;
+  --color-primary-900: #002266;
+  --color-primary-950: #00174a;
+
+  /* Highlight: Philippine flag yellow. On dark blue only; never as text on white. */
+  --color-accent: #fcd116;
+
+  /* Green is a status colour only: free slot, preferred slot, done, within limit */
   --color-emerald-50: #f1fbf4;
   --color-emerald-100: #defbe6;
   --color-emerald-200: #a7f0ba;
@@ -50,8 +67,8 @@
   --color-red-200: #ffb3b8;
   --color-red-300: #ff8389;
   --color-red-400: #fa4d56;
-  --color-red-500: #da1e28;
-  --color-red-600: #da1e28;
+  --color-red-500: #ce1126;
+  --color-red-600: #ce1126;
   --color-red-700: #a2191f;
   --color-red-800: #750e13;
   --color-red-900: #520408;
@@ -89,7 +106,7 @@ body {
 
 /* One clear focus style everywhere (keyboard users and older monitors). */
 :focus-visible {
-  outline: 2px solid var(--color-emerald-700);
+  outline: 2px solid var(--color-primary-600);
   outline-offset: 1px;
 }
 

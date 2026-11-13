@@ -164,7 +164,7 @@ export function AutoScheduleDialog({ semesterId, onApplied, onClose }: Props) {
               className="h-2 overflow-hidden rounded bg-stone-200"
             >
               <div
-                className="h-full rounded bg-emerald-600 transition-all"
+                className="h-full rounded bg-primary-600 transition-all"
                 style={{ width: `${percentOf(progress?.placed_hours ?? 0, progress?.required_hours ?? 0)}%` }}
               />
             </div>

@@ -112,7 +112,7 @@ function SchoolStep({ onNext }: StepProps) {
         <label className="flex items-center gap-2 text-sm text-stone-800 sm:col-span-2">
           <input
             type="checkbox"
-            className="size-4 accent-emerald-800"
+            className="size-4 accent-primary-800"
             checked={form.saturday}
             onChange={(event) => setForm((current) => ({ ...current, saturday: event.target.checked }))}
           />
@@ -443,7 +443,7 @@ function BellEditor({ shift, onSaved }: { shift: Shift; onSaved: (shift: Shift) 
                     <input aria-label={`Row ${index + 1} end`} type="time" className={inputClass} value={row.end_time} onChange={(e) => update(index, { end_time: e.target.value })} />
                   </td>
                   <td className="py-1 pr-2 text-center">
-                    <input aria-label={`Row ${index + 1} is a break`} type="checkbox" className="size-4 accent-emerald-800" checked={row.is_break} onChange={(e) => update(index, { is_break: e.target.checked })} />
+                    <input aria-label={`Row ${index + 1} is a break`} type="checkbox" className="size-4 accent-primary-800" checked={row.is_break} onChange={(e) => update(index, { is_break: e.target.checked })} />
                   </td>
                   <td className="py-1 text-right">
                     <Button variant="ghost" small className="!text-red-700" onClick={() => change(rows.filter((_, i) => i !== index))}>
@@ -572,7 +572,7 @@ function StrandsStep({ onBack }: StepProps) {
                   <label key={strand.code} className="flex items-start gap-2 text-sm text-stone-800">
                     <input
                       type="checkbox"
-                      className="mt-0.5 size-4 accent-emerald-800"
+                      className="mt-0.5 size-4 accent-primary-800"
                       disabled={added}
                       checked={added || chosen.has(strand.code)}
                       onChange={(event) => {
@@ -628,7 +628,7 @@ export default function OnboardingPage() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-800">School setup</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary-800">School setup</p>
           <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">{school.name}</h1>
         </div>
         {school.onboarding_completed && (
@@ -645,9 +645,9 @@ export default function OnboardingPage() {
             aria-current={index === step ? "step" : undefined}
             className={`border-t-4 pt-2 ${
               index === step
-                ? "border-emerald-800 font-semibold text-emerald-900"
+                ? "border-primary-800 font-semibold text-primary-900"
                 : index < step
-                  ? "border-emerald-300 text-stone-700"
+                  ? "border-primary-300 text-stone-700"
                   : "border-stone-200 text-stone-500"
             }`}
           >
