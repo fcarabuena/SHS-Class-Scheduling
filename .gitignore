@@ -19,3 +19,6 @@ Thumbs.db
 
 # Reference material only: not part of this project, never committed
 Sample/
+
+# Recorded demo video (made with: cd frontend; npx playwright test -c playwright.video.config.ts)
+/demo-video/
