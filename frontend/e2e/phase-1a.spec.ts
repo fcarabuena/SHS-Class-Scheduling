@@ -118,7 +118,7 @@ test("register a school, finish setup, manage data, and check the read-only teac
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel("Email").fill("teacher@sample.example");
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("link", { name: "User accounts" })).toHaveCount(0);
 
@@ -134,7 +134,7 @@ test("wrong password shows an error and protected pages redirect to sign in", as
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel("Email").fill("nobody@sample.example");
   await page.getByLabel("Password").fill("wrong-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Incorrect email or password." })).toBeVisible();
 });
 
@@ -143,7 +143,7 @@ test("layout works at phone width", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@sample.example");
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("link", { name: "Subjects", exact: true }).click();

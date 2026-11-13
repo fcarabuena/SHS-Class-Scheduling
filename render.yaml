@@ -30,6 +30,9 @@ services:
       # Who may manage every school (comma-separated emails).
       - key: PLATFORM_ADMIN_EMAILS
         sync: false
+      # Public demo school with one-click test accounts on the sign-in page, rebuilt daily.
+      - key: DEMO_MODE
+        value: "true"
       # Student notifications: generate with  python -m app.push  (optional; empty = Follow is hidden).
       - key: VAPID_PUBLIC_KEY
         sync: false

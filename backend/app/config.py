@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # A contact the push services can reach about this server (mailto: or https:).
     vapid_subject: str = "mailto:noreply@example.com"
 
+    # Public demo school with test accounts, rebuilt daily (see app/demo.py). Off unless set.
+    demo_mode: bool = False
+    # The demo admin's password. Empty = a random one nobody knows (the admin is never published).
+    demo_admin_password: str = ""
+
     # Rate limits, as "attempts/seconds".
     rate_limit_login: str = "10/300"
     rate_limit_register: str = "5/3600"

@@ -9,7 +9,7 @@ async function signIn(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
@@ -99,4 +99,23 @@ test("share a timetable publicly, notify the teacher, and manage schools as the 
   await page.getByRole("button", { name: "Mark all as read" }).click();
   await expect(page.getByRole("link", { name: "Notifications", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "All schools" })).toHaveCount(0);
+});
+
+test("the public demo: one-click test accounts and a student's view", async ({ page }) => {
+  await page.goto("/login");
+  const demo = page.getByRole("region", { name: "Try the demo" });
+  await expect(demo).toBeVisible();
+  await expect(demo).not.toContainText("admin@demo.example"); // the demo admin is never published
+  await page.screenshot({ path: `${SHOTS}/23-login-demo.png`, fullPage: true });
+
+  await demo.getByRole("link", { name: /student's view/ }).click();
+  await expect(page.getByRole("heading", { name: "11-STEM-Sampaguita" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
+
+  await page.goto("/login");
+  await page.getByRole("button", { name: /Sign in as Teacher/ }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Demo Senior High School" })).toBeVisible();
+  await page.getByRole("link", { name: "Timetable" }).click();
+  await expect(page.getByRole("button", { name: "Auto-schedule" })).toHaveCount(0); // read-only
 });

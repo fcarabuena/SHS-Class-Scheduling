@@ -33,7 +33,7 @@ test("auto-schedule around a pinned class, then check the dashboard and the subs
   await page.goto("/login");
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("link", { name: /13%\s*of class hours placed/ })).toBeVisible(); // 1 h of 8 h
 

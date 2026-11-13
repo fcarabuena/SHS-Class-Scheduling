@@ -10,6 +10,7 @@ import os
 
 os.environ["POSTGRES_DB"] = "shs_scheduler_e2e"
 os.environ["DATABASE_URL"] = ""  # the throwaway local database, never a hosted one
+os.environ["DEMO_MODE"] = "true"  # the public demo school is built in the background at start
 os.environ["CORS_ORIGINS"] = "http://localhost:3001"
 os.environ["PUBLIC_APP_URL"] = "http://localhost:3001"
 os.environ["PLATFORM_ADMIN_EMAILS"] = "owner@platform.example"

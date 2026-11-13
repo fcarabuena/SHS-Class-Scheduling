@@ -190,6 +190,21 @@ and save; Render redeploys the API. Open the Vercel address and choose
 Both services use HTTPS, which students' phones need to follow a section.
 Every push to `main` redeploys both automatically.
 
+**Public demo (test accounts).** With `DEMO_MODE=true` on the API, the
+sign-in page shows a **Try the demo** box with one-click sign-in for a
+fictional school, "Demo Senior High School", and a student's view:
+
+| Who | How | Can do |
+|---|---|---|
+| Scheduler | `scheduler@demo.example` / `DemoPass#2026` | Everything except user accounts and school setup |
+| Teacher | `teacher@demo.example` / `DemoPass#2026` | View only |
+| Student | the **See a student's view** link (no account) | View one section's timetable, Follow, add to calendar |
+
+The demo admin is never published: it gets a random password unless you set
+`DEMO_ADMIN_PASSWORD` in Render. The demo school is rebuilt (everything
+visitors changed is undone) when the API starts and the last rebuild is over
+a day old; real schools are never touched. Remove `DEMO_MODE` to turn it off.
+
 **Free-tier limits to know.** The API sleeps when nobody uses it for 15
 minutes, so the first visitor after a quiet spell waits about a minute.
 Auto-schedule is slower on the free API's small share of a CPU; keep its

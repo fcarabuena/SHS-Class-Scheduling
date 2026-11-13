@@ -1,10 +1,12 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from . import demo
 from . import push  # noqa: F401  (registers the timetable-change listener)
 from .config import settings
 from .routers import auth, crud, imports, platform, schedule, school, share, templates
@@ -12,7 +14,13 @@ from .services import integrity_message
 
 log = logging.getLogger(__name__)
 
-app = FastAPI(title="SHS Class Scheduling and Teacher Loading API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    demo.start()  # no-op unless DEMO_MODE is on
+    yield
+
+
+app = FastAPI(title="SHS Class Scheduling and Teacher Loading API", version="0.1.0", lifespan=lifespan)
 
 
 # Registered before CORS so it sits inside it: an unexpected error still reaches the browser with the
@@ -43,6 +51,12 @@ def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONRespon
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/demo")
+def demo_accounts() -> dict:
+    """The public demo's test accounts and student link, when DEMO_MODE is on."""
+    return demo.info()
 
 
 app.include_router(auth.router)

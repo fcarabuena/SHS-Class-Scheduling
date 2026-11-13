@@ -112,7 +112,7 @@ test("demo video: from an empty week to a conflict-free timetable", async ({ pag
   await caption(page, "Each school gets its own private workspace", "Admins, schedulers and teachers sign in with their own roles.");
   await page.getByLabel("Email").pressSequentially("admin@demo.example", { delay: 35 });
   await page.getByLabel("Password").pressSequentially("DemoPass#2026", { delay: 35 });
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   // --- dashboard -------------------------------------------------------------------------------

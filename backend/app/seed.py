@@ -177,7 +177,8 @@ def seed_schedule(db: Session, school_id: int) -> int:
     return len(placed)
 
 
-def seed() -> None:
+def seed(with_schedule: bool = True) -> None:
+    """Creates the demo school. with_schedule=False leaves loading and timetable empty."""
     with SessionLocal() as db:
         if existing := db.scalar(select(User).where(User.email == DEMO_USERS[0][0])):
             placed = seed_schedule(db, existing.school_id)
@@ -258,7 +259,8 @@ def seed() -> None:
 
         school.onboarding_completed = True
         db.flush()
-        seed_schedule(db, sid)
+        if with_schedule:
+            seed_schedule(db, sid)
         db.commit()
 
     print("Demo school created. Sign in with any of:")

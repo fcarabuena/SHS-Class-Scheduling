@@ -14,7 +14,7 @@ test("load teachers, build a timetable by drag and drop, fix a conflict, switch 
   await page.goto("/login");
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   // --- teacher loading ---------------------------------------------------------
@@ -119,7 +119,7 @@ test("timetable fits a phone and is read-only for the teacher role", async ({ pa
   await page.goto("/login");
   await page.getByLabel("Email").fill("viewer@timetable.example");
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Menu" }).click();
   await expect(page.getByRole("link", { name: "Change history" })).toHaveCount(0);
