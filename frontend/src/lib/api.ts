@@ -70,7 +70,10 @@ async function request(path: string, options: Options): Promise<Response> {
       body: options.form ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
     });
   } catch {
-    throw new ApiError(0, "Cannot reach the server. Check that the backend is running.");
+    throw new ApiError(
+      0,
+      "Cannot reach the server. It may be starting up, which can take up to a minute. Please try again shortly.",
+    );
   }
   if (!response.ok) {
     const body = await response.json().catch(() => null);

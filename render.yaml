@@ -11,7 +11,8 @@ services:
     buildCommand: pip install -r requirements.txt
     # Migrations run before every start, so the schema always matches the code.
     # One process on purpose: sign-in limits, auto-schedule runs and waiting notifications live in its memory.
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # --forwarded-allow-ips: trust Render's proxy, so sign-in limits see each visitor's own address.
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips '*'
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION

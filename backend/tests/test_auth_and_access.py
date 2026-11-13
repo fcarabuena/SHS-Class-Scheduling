@@ -151,3 +151,21 @@ def test_schema_holds_no_student_personal_data():
     assert {c.name for c in Base.metadata.tables["teachers"].columns} == {
         "id", "school_id", "employee_id", "full_name", "max_daily_hours", "max_weekly_hours", "is_active",
     }
+
+
+def test_unexpected_errors_reach_the_browser_as_json_with_cors_headers(client):
+    from app.config import settings
+    from app.main import app
+
+    def broken():
+        raise RuntimeError("boom")
+
+    app.add_api_route("/api/test-broken", broken)
+    try:
+        origin = settings.cors_origins.split(",")[0].strip()
+        response = client.get("/api/test-broken", headers={"Origin": origin})
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Something went wrong on the server. Please try again."}
+        assert response.headers["access-control-allow-origin"] == origin  # so the browser can show the message
+    finally:
+        app.router.routes[:] = [r for r in app.router.routes if getattr(r, "path", "") != "/api/test-broken"]

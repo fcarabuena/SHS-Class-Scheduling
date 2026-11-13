@@ -64,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) setLoading(false);
     }
     restore();
+    // Wake a sleeping (free-tier) API while the user is still reading or typing.
+    api("/api/health").catch(() => undefined);
     window.addEventListener(UNAUTHORIZED_EVENT, logout);
     return () => {
       cancelled = true;
