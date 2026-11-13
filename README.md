@@ -141,6 +141,42 @@ Interactive API docs: http://localhost:8000/docs
 PostgreSQL runs as a normal process, not a Windows service, so it does not
 start with Windows. `run-backend.ps1` starts it; `scripts\pg-stop.ps1` stops it.
 
+## Deploying on Render
+
+`render.yaml` describes everything Render needs: a PostgreSQL 16 database,
+the API and the web app, all in the Singapore region.
+
+**Database: Render Postgres, paid `basic-256mb` plan.** The app is built on
+PostgreSQL, the database sits on Render's private network next to the API,
+and paid plans include point-in-time recovery (restore to any moment in the
+last few days). Do not use Render's free database for a school: it is
+deleted 30 days after creation and has no backups. The two web services use
+the `starter` plan because free instances sleep after 15 idle minutes, which
+would stop auto-schedule runs and student notifications.
+
+1. In the Render dashboard choose **New > Blueprint** and select this
+   repository. Render reads `render.yaml`.
+2. It asks for the values marked `sync: false`. Render names the services
+   `shs-api` and `shs-app`; their addresses are shown on each service page
+   (normally `https://shs-api.onrender.com` and `https://shs-app.onrender.com`).
+   - `CORS_ORIGINS` and `PUBLIC_APP_URL`: the web app's address.
+   - `NEXT_PUBLIC_API_URL`: the API's address.
+   - `PLATFORM_ADMIN_EMAILS`: your email, to manage all schools.
+   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: run
+     `backend\.venv\Scripts\python.exe -m app.push` and paste the two lines.
+     `VAPID_SUBJECT`: `mailto:` plus a contact email.
+   - `BILLING_WEBHOOK_SECRET`: leave empty.
+3. Create the Blueprint. The API applies the database migrations on every
+   start. If an address was not known yet when you entered it, correct it
+   under the service's **Environment** tab and redeploy; the web app must be
+   redeployed after `NEXT_PUBLIC_API_URL` changes.
+4. Open the web app and choose **Register your school**. Do not run the demo
+   seed on the live database.
+
+Render serves both services over HTTPS, which students' phones need to
+follow a section. To use your own domain, add it under each service's
+**Settings > Custom Domains** and update the addresses above.
+
 ## Tests
 
 ```powershell

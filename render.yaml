@@ -1,0 +1,70 @@
+# Render Blueprint: the database, the API and the web app, all in Singapore (closest to the Philippines).
+# In the Render dashboard choose New > Blueprint and pick this repository. See "Deploying on Render" in README.md.
+
+databases:
+  - name: shs-db
+    plan: basic-256mb # paid: free databases are deleted after 30 days and have no backups
+    region: singapore
+    postgresMajorVersion: "16"
+    databaseName: shs_scheduler
+    user: shs_app
+
+services:
+  - type: web
+    name: shs-api
+    runtime: python
+    plan: starter # free instances sleep after 15 idle minutes, which stops auto-schedule runs and notifications
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Migrations run before every start, so the schema always matches the code.
+    # One process on purpose: sign-in limits, auto-schedule runs and waiting notifications live in its memory.
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: POSTGRES_HOST
+        fromDatabase: { name: shs-db, property: host }
+      - key: POSTGRES_DB
+        fromDatabase: { name: shs-db, property: database }
+      - key: POSTGRES_USER
+        fromDatabase: { name: shs-db, property: user }
+      - key: POSTGRES_PASSWORD
+        fromDatabase: { name: shs-db, property: password }
+      - key: JWT_SECRET
+        generateValue: true
+      # The web app's address, for example https://shs-app.onrender.com (both keys get the same value).
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      # Who may manage every school (comma-separated emails).
+      - key: PLATFORM_ADMIN_EMAILS
+        sync: false
+      # Student notifications: generate with  python -m app.push  (optional; empty = Follow is hidden).
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      # Optional: only when a payment provider is connected.
+      - key: BILLING_WEBHOOK_SECRET
+        sync: false
+
+  - type: web
+    name: shs-app
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "26"
+      # The API's address, for example https://shs-api.onrender.com. Read when the app is built:
+      # after changing it, redeploy the web app.
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
