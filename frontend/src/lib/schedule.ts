@@ -222,6 +222,8 @@ export type SolverJob = {
   } | null;
   error: string | null;
   applied_at: string | null;
+  /** The timetable or loading changed since this run, so its result can no longer be applied. */
+  stale?: boolean;
 };
 
 export type SubstituteCandidate = {

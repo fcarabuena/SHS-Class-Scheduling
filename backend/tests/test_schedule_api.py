@@ -519,7 +519,10 @@ def test_solver_explains_what_it_could_not_place(admin, world):
 def test_stale_result_cannot_be_applied_and_access_is_restricted(admin, world, other_school):
     data = loaded(admin, world)
     job = run_solver(admin)
+    assert ok(admin.get(f"/api/solver/jobs/{job['id']}"))["stale"] is False
     ok(place(admin, data, world["a"], world["math"], MON, world["periods"][0]), 201)  # timetable changed meanwhile
+    assert ok(admin.get(f"/api/solver/jobs/{job['id']}"))["stale"] is True
+    assert ok(admin.get("/api/solver/jobs/latest"))["stale"] is True  # the dialog starts afresh instead of offering it
     stale = admin.post(f"/api/solver/jobs/{job['id']}/apply")
     assert stale.status_code == 409 and "Run the scheduler again" in stale.json()["detail"]
 

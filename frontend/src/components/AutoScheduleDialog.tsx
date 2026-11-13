@@ -44,7 +44,8 @@ export function AutoScheduleDialog({ semesterId, onApplied, onClose }: Props) {
     api<SolverJob | null>("/api/solver/jobs/latest", { params: { semester_id: semesterId } })
       .then((latest) => {
         if (cancelled) return;
-        if (latest && (isActive(latest) || (latest.status === "done" && !latest.applied_at))) setJob(latest);
+        // A finished run is offered only while it still matches the timetable; otherwise start afresh.
+        if (latest && (isActive(latest) || (latest.status === "done" && !latest.applied_at && !latest.stale))) setJob(latest);
         setLoaded(true);
       })
       .catch(() => !cancelled && setLoaded(true));
@@ -87,7 +88,9 @@ export function AutoScheduleDialog({ semesterId, onApplied, onClose }: Props) {
   async function apply() {
     if (!job) return;
     const fresh = await call(() => api<Overview>(`/api/solver/jobs/${job.id}/apply`, { method: "POST" }));
-    if (fresh) {
+    if (!fresh) {
+      setJob(null); // the result cannot be used (usually: the timetable changed meanwhile); show the error and the Start form
+    } else {
       onApplied(fresh);
       onClose();
     }

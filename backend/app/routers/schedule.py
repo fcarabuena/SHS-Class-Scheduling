@@ -794,12 +794,20 @@ def latest_solver_job(db: DbSession, user: CurrentUser, semester_id: int | None 
         .where(SolverJob.school_id == user.school_id, SolverJob.semester_id == semester.id)
         .order_by(SolverJob.id.desc())
     ).first()
-    return _job_json(_refresh(db, job)) if job else None
+    return _job_with_staleness(db, job) if job else None
 
 
 @router.get("/solver/jobs/{job_id}")
 def get_solver_job(job_id: int, db: DbSession, user: CurrentUser):
-    return _job_json(_refresh(db, get_owned(db, SolverJob, job_id, user.school_id)))
+    return _job_with_staleness(db, get_owned(db, SolverJob, job_id, user.school_id))
+
+
+def _job_with_staleness(db: Session, job: SolverJob) -> dict[str, Any]:
+    """Adds "stale": the timetable or loading changed since the run, so its result can no longer be applied."""
+    body = _job_json(_refresh(db, job))
+    if job.status == "done" and job.applied_at is None and job.result:
+        body["stale"] = jobs.fingerprint(load_state(db, job.school_id, db.get(Semester, job.semester_id))) != job.result["base"]
+    return body
 
 
 @router.post("/solver/jobs/{job_id}/cancel")
