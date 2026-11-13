@@ -1,0 +1,198 @@
+{
+  "note": "Editable starting point only. Subject lists, hours per week and grade/semester placement are SAMPLE values based on the K to 12 SHS curriculum guides and must be checked against the school's approved program offering and current DepEd issuances. Curriculum rows are [subject_code, grade_level, semester].",
+  "tracks": [
+    {
+      "code": "ACAD",
+      "name": "Academic Track",
+      "strands": [
+        {"code": "ABM", "name": "Accountancy, Business and Management"},
+        {"code": "HUMSS", "name": "Humanities and Social Sciences"},
+        {"code": "STEM", "name": "Science, Technology, Engineering and Mathematics"},
+        {"code": "GAS", "name": "General Academic Strand"}
+      ]
+    },
+    {
+      "code": "TVL",
+      "name": "Technical-Vocational-Livelihood Track",
+      "strands": [
+        {"code": "ICT", "name": "Information and Communications Technology"},
+        {"code": "HE", "name": "Home Economics"},
+        {"code": "IA", "name": "Industrial Arts"},
+        {"code": "AFA", "name": "Agri-Fishery Arts"}
+      ]
+    },
+    {
+      "code": "SPORTS",
+      "name": "Sports Track",
+      "strands": [{"code": "SPORTS", "name": "Sports"}]
+    },
+    {
+      "code": "ARTS",
+      "name": "Arts and Design Track",
+      "strands": [{"code": "AD", "name": "Arts and Design"}]
+    }
+  ],
+  "subjects": [
+    {"code": "CORE-ORALCOM", "name": "Oral Communication", "type": "core", "hours": 4},
+    {"code": "CORE-RW", "name": "Reading and Writing", "type": "core", "hours": 4},
+    {"code": "CORE-KPWKP", "name": "Komunikasyon at Pananaliksik sa Wika at Kulturang Pilipino", "type": "core", "hours": 4},
+    {"code": "CORE-PAGBASA", "name": "Pagbasa at Pagsusuri ng Iba't Ibang Teksto Tungo sa Pananaliksik", "type": "core", "hours": 4},
+    {"code": "CORE-21LIT", "name": "21st Century Literature from the Philippines and the World", "type": "core", "hours": 4},
+    {"code": "CORE-CPAR", "name": "Contemporary Philippine Arts from the Regions", "type": "core", "hours": 4},
+    {"code": "CORE-MIL", "name": "Media and Information Literacy", "type": "core", "hours": 4},
+    {"code": "CORE-GENMATH", "name": "General Mathematics", "type": "core", "hours": 4, "heavy": true},
+    {"code": "CORE-STAT", "name": "Statistics and Probability", "type": "core", "hours": 4, "heavy": true},
+    {"code": "CORE-ELS", "name": "Earth and Life Science", "type": "core", "hours": 4, "heavy": true},
+    {"code": "CORE-PHYSCI", "name": "Physical Science", "type": "core", "hours": 4, "heavy": true},
+    {"code": "CORE-EARTHSCI", "name": "Earth Science", "type": "core", "hours": 4, "heavy": true},
+    {"code": "CORE-DRRR", "name": "Disaster Readiness and Risk Reduction", "type": "core", "hours": 4},
+    {"code": "CORE-PHILO", "name": "Introduction to the Philosophy of the Human Person", "type": "core", "hours": 4},
+    {"code": "CORE-PERDEV", "name": "Personal Development", "type": "core", "hours": 4},
+    {"code": "CORE-UCSP", "name": "Understanding Culture, Society and Politics", "type": "core", "hours": 4},
+    {"code": "CORE-PE1", "name": "Physical Education and Health 1", "type": "core", "hours": 1, "room": "gym"},
+    {"code": "CORE-PE2", "name": "Physical Education and Health 2", "type": "core", "hours": 1, "room": "gym"},
+    {"code": "CORE-PE3", "name": "Physical Education and Health 3", "type": "core", "hours": 1, "room": "gym"},
+    {"code": "CORE-PE4", "name": "Physical Education and Health 4", "type": "core", "hours": 1, "room": "gym"},
+
+    {"code": "APP-EAPP", "name": "English for Academic and Professional Purposes", "type": "applied", "hours": 4},
+    {"code": "APP-PR1", "name": "Practical Research 1", "type": "applied", "hours": 4},
+    {"code": "APP-PR2", "name": "Practical Research 2", "type": "applied", "hours": 4},
+    {"code": "APP-FPL", "name": "Filipino sa Piling Larang", "type": "applied", "hours": 4},
+    {"code": "APP-ETECH", "name": "Empowerment Technologies", "type": "applied", "hours": 4, "room": "computer_lab"},
+    {"code": "APP-ENTREP", "name": "Entrepreneurship", "type": "applied", "hours": 4},
+    {"code": "APP-III", "name": "Inquiries, Investigations and Immersion", "type": "applied", "hours": 4},
+
+    {"code": "ABM-APPECON", "name": "Applied Economics", "type": "specialized", "hours": 4},
+    {"code": "ABM-ETHICS", "name": "Business Ethics and Social Responsibility", "type": "specialized", "hours": 4},
+    {"code": "ABM-FABM1", "name": "Fundamentals of Accountancy, Business and Management 1", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "ABM-FABM2", "name": "Fundamentals of Accountancy, Business and Management 2", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "ABM-BMATH", "name": "Business Mathematics", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "ABM-BFIN", "name": "Business Finance", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "ABM-ORGMAN", "name": "Organization and Management", "type": "specialized", "hours": 4},
+    {"code": "ABM-MKTG", "name": "Principles of Marketing", "type": "specialized", "hours": 4},
+    {"code": "ABM-WI", "name": "Work Immersion / Business Enterprise Simulation", "type": "specialized", "hours": 4},
+
+    {"code": "HUMSS-CW", "name": "Creative Writing", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-CNF", "name": "Creative Nonfiction", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-IWRBS", "name": "Introduction to World Religions and Belief Systems", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-TNCT", "name": "Trends, Networks and Critical Thinking in the 21st Century", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-PPG", "name": "Philippine Politics and Governance", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-CESC", "name": "Community Engagement, Solidarity and Citizenship", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-DISS", "name": "Disciplines and Ideas in the Social Sciences", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-DIASS", "name": "Disciplines and Ideas in the Applied Social Sciences", "type": "specialized", "hours": 4},
+    {"code": "HUMSS-WI", "name": "Work Immersion / Culminating Activity", "type": "specialized", "hours": 4},
+
+    {"code": "STEM-PRECAL", "name": "Pre-Calculus", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "STEM-BASCAL", "name": "Basic Calculus", "type": "specialized", "hours": 4, "heavy": true},
+    {"code": "STEM-BIO1", "name": "General Biology 1", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-BIO2", "name": "General Biology 2", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-PHYS1", "name": "General Physics 1", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-PHYS2", "name": "General Physics 2", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-CHEM1", "name": "General Chemistry 1", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-CHEM2", "name": "General Chemistry 2", "type": "specialized", "hours": 4, "room": "science_lab", "heavy": true},
+    {"code": "STEM-CAP", "name": "Work Immersion / Research / Capstone Project", "type": "specialized", "hours": 4},
+
+    {"code": "GAS-HUM1", "name": "Humanities 1", "type": "specialized", "hours": 4},
+    {"code": "GAS-HUM2", "name": "Humanities 2", "type": "specialized", "hours": 4},
+    {"code": "GAS-SS1", "name": "Social Science 1", "type": "specialized", "hours": 4},
+    {"code": "GAS-APPECON", "name": "Applied Economics (GAS)", "type": "specialized", "hours": 4},
+    {"code": "GAS-ORGMAN", "name": "Organization and Management (GAS)", "type": "specialized", "hours": 4},
+    {"code": "GAS-ELEC1", "name": "Elective 1", "type": "specialized", "hours": 4},
+    {"code": "GAS-ELEC2", "name": "Elective 2", "type": "specialized", "hours": 4},
+    {"code": "GAS-WI", "name": "Work Immersion / Culminating Activity (GAS)", "type": "specialized", "hours": 4},
+
+    {"code": "ICT-CSS1", "name": "Computer Systems Servicing (Part 1)", "type": "specialized", "hours": 8, "room": "computer_lab"},
+    {"code": "ICT-CSS2", "name": "Computer Systems Servicing (Part 2)", "type": "specialized", "hours": 8, "room": "computer_lab"},
+    {"code": "ICT-PROG1", "name": "Computer Programming (Part 1)", "type": "specialized", "hours": 8, "room": "computer_lab"},
+    {"code": "ICT-PROG2", "name": "Computer Programming (Part 2)", "type": "specialized", "hours": 8, "room": "computer_lab"},
+    {"code": "ICT-WI", "name": "Work Immersion (ICT)", "type": "specialized", "hours": 4},
+
+    {"code": "HE-COOK1", "name": "Cookery (Part 1)", "type": "specialized", "hours": 8, "room": "home_economics"},
+    {"code": "HE-COOK2", "name": "Cookery (Part 2)", "type": "specialized", "hours": 8, "room": "home_economics"},
+    {"code": "HE-BPP", "name": "Bread and Pastry Production", "type": "specialized", "hours": 8, "room": "home_economics"},
+    {"code": "HE-FBS", "name": "Food and Beverage Services", "type": "specialized", "hours": 8, "room": "home_economics"},
+    {"code": "HE-WI", "name": "Work Immersion (HE)", "type": "specialized", "hours": 4},
+
+    {"code": "IA-EIM1", "name": "Electrical Installation and Maintenance (Part 1)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "IA-EIM2", "name": "Electrical Installation and Maintenance (Part 2)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "IA-SMAW1", "name": "Shielded Metal Arc Welding (Part 1)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "IA-SMAW2", "name": "Shielded Metal Arc Welding (Part 2)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "IA-WI", "name": "Work Immersion (IA)", "type": "specialized", "hours": 4},
+
+    {"code": "AFA-ACP1", "name": "Agricultural Crops Production (Part 1)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "AFA-ACP2", "name": "Agricultural Crops Production (Part 2)", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "AFA-ANIM", "name": "Animal Production", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "AFA-AQUA", "name": "Aquaculture", "type": "specialized", "hours": 8, "room": "shop"},
+    {"code": "AFA-WI", "name": "Work Immersion (AFA)", "type": "specialized", "hours": 4},
+
+    {"code": "SP-SFA", "name": "Safety and First Aid", "type": "specialized", "hours": 4},
+    {"code": "SP-HM", "name": "Human Movement", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-COACH", "name": "Fundamentals of Coaching", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-OFFIC", "name": "Sports Officiating and Activity Management", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-FSRL", "name": "Fitness, Sports and Recreation Leadership", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-PSYCH", "name": "Psychosocial Aspects of Sports and Exercise", "type": "specialized", "hours": 4},
+    {"code": "SP-FT", "name": "Fitness Testing and Basic Exercise Programming", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-PRAC", "name": "Practicum (In-Campus)", "type": "specialized", "hours": 4, "room": "gym"},
+    {"code": "SP-WI", "name": "Work Immersion / Apprenticeship (Off-Campus)", "type": "specialized", "hours": 4},
+
+    {"code": "AD-CI1", "name": "Creative Industries I: Arts and Design Appreciation and Production", "type": "specialized", "hours": 4},
+    {"code": "AD-CI2", "name": "Creative Industries II: Performing Arts", "type": "specialized", "hours": 4},
+    {"code": "AD-PPD", "name": "Physical and Personal Development in the Arts", "type": "specialized", "hours": 4},
+    {"code": "AD-DFIA", "name": "Developing Filipino Identity in the Arts", "type": "specialized", "hours": 4},
+    {"code": "AD-IEPO", "name": "Integrating the Elements and Principles of Organization in the Arts", "type": "specialized", "hours": 4},
+    {"code": "AD-LMAF", "name": "Leadership and Management in Different Arts Fields", "type": "specialized", "hours": 4},
+    {"code": "AD-APPR", "name": "Apprenticeship and Exploration of Different Arts Fields", "type": "specialized", "hours": 8},
+    {"code": "AD-WI", "name": "Work Immersion / Performing Arts Production / Exhibit", "type": "specialized", "hours": 4}
+  ],
+  "common_exclusions": {
+    "STEM": ["CORE-ELS", "CORE-PHYSCI"]
+  },
+  "curriculum": {
+    "COMMON": [
+      ["CORE-ORALCOM", 11, 1], ["CORE-KPWKP", 11, 1], ["CORE-GENMATH", 11, 1], ["CORE-ELS", 11, 1],
+      ["CORE-PERDEV", 11, 1], ["CORE-UCSP", 11, 1], ["CORE-PE1", 11, 1],
+      ["CORE-RW", 11, 2], ["CORE-PAGBASA", 11, 2], ["CORE-STAT", 11, 2], ["CORE-PHYSCI", 11, 2],
+      ["CORE-21LIT", 11, 2], ["CORE-PE2", 11, 2], ["APP-EAPP", 11, 2], ["APP-PR1", 11, 2],
+      ["CORE-PHILO", 12, 1], ["CORE-CPAR", 12, 1], ["CORE-MIL", 12, 1], ["CORE-PE3", 12, 1],
+      ["APP-PR2", 12, 1], ["APP-FPL", 12, 1], ["APP-ETECH", 12, 1],
+      ["CORE-PE4", 12, 2], ["APP-ENTREP", 12, 2], ["APP-III", 12, 2]
+    ],
+    "ABM": [
+      ["ABM-BMATH", 11, 1], ["ABM-ORGMAN", 11, 1], ["ABM-FABM1", 11, 2], ["ABM-MKTG", 11, 2],
+      ["ABM-FABM2", 12, 1], ["ABM-BFIN", 12, 1], ["ABM-APPECON", 12, 2], ["ABM-ETHICS", 12, 2], ["ABM-WI", 12, 2]
+    ],
+    "HUMSS": [
+      ["HUMSS-DISS", 11, 1], ["HUMSS-IWRBS", 11, 1], ["HUMSS-DIASS", 11, 2], ["HUMSS-PPG", 11, 2],
+      ["HUMSS-CW", 12, 1], ["HUMSS-TNCT", 12, 1], ["HUMSS-CNF", 12, 2], ["HUMSS-CESC", 12, 2], ["HUMSS-WI", 12, 2]
+    ],
+    "STEM": [
+      ["CORE-EARTHSCI", 11, 1], ["STEM-PRECAL", 11, 1], ["STEM-CHEM1", 11, 1],
+      ["CORE-DRRR", 11, 2], ["STEM-BASCAL", 11, 2], ["STEM-CHEM2", 11, 2],
+      ["STEM-BIO1", 12, 1], ["STEM-PHYS1", 12, 1], ["STEM-BIO2", 12, 2], ["STEM-PHYS2", 12, 2], ["STEM-CAP", 12, 2]
+    ],
+    "GAS": [
+      ["GAS-HUM1", 11, 1], ["GAS-ORGMAN", 11, 1], ["GAS-HUM2", 11, 2], ["GAS-SS1", 11, 2],
+      ["GAS-APPECON", 12, 1], ["GAS-ELEC1", 12, 1], ["CORE-DRRR", 12, 2], ["GAS-ELEC2", 12, 2], ["GAS-WI", 12, 2]
+    ],
+    "ICT": [
+      ["ICT-CSS1", 11, 1], ["ICT-CSS2", 11, 2], ["ICT-PROG1", 12, 1], ["ICT-PROG2", 12, 2], ["ICT-WI", 12, 2]
+    ],
+    "HE": [
+      ["HE-COOK1", 11, 1], ["HE-COOK2", 11, 2], ["HE-BPP", 12, 1], ["HE-FBS", 12, 2], ["HE-WI", 12, 2]
+    ],
+    "IA": [
+      ["IA-EIM1", 11, 1], ["IA-EIM2", 11, 2], ["IA-SMAW1", 12, 1], ["IA-SMAW2", 12, 2], ["IA-WI", 12, 2]
+    ],
+    "AFA": [
+      ["AFA-ACP1", 11, 1], ["AFA-ACP2", 11, 2], ["AFA-ANIM", 12, 1], ["AFA-AQUA", 12, 2], ["AFA-WI", 12, 2]
+    ],
+    "SPORTS": [
+      ["SP-SFA", 11, 1], ["SP-HM", 11, 1], ["SP-COACH", 11, 2], ["SP-OFFIC", 11, 2],
+      ["SP-FSRL", 12, 1], ["SP-PSYCH", 12, 1], ["SP-FT", 12, 2], ["SP-PRAC", 12, 2], ["SP-WI", 12, 2]
+    ],
+    "AD": [
+      ["AD-CI1", 11, 1], ["AD-CI2", 11, 2], ["AD-PPD", 11, 2], ["AD-DFIA", 12, 1], ["AD-IEPO", 12, 1],
+      ["AD-LMAF", 12, 2], ["AD-APPR", 12, 2], ["AD-WI", 12, 2]
+    ]
+  }
+}

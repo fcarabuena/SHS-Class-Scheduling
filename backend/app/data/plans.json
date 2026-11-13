@@ -1,0 +1,16 @@
+{
+  "note": "Subscription plans. Edit freely: names and limits are business decisions, not code. null means no limit. New schools start on default_plan.",
+  "default_plan": "standard",
+  "plans": {
+    "standard": {
+      "name": "Standard",
+      "max_sections": null,
+      "max_teachers": null
+    },
+    "starter": {
+      "name": "Starter",
+      "max_sections": 6,
+      "max_teachers": 20
+    }
+  }
+}

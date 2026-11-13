@@ -8,8 +8,8 @@ __pycache__/
 node_modules/
 .next/
 
-# Local data (Postgres / Docker bind mounts) and secrets
-data/
+# Local data (Postgres / Docker bind mounts, at the project root only) and secrets
+/data/
 .env
 .env.local
 

@@ -354,3 +354,13 @@ def test_hosted_database_connection_string_is_used_as_given():
     assert url.query["sslmode"] == "require"
     local = Settings(jwt_secret="x", DATABASE_URL="", POSTGRES_DB="local_db")
     assert (local.database_url.host, local.database_url.database) == ("localhost", "local_db")
+
+
+def test_bundled_data_files_are_in_git():
+    """They ship with the code. A .gitignore rule once kept them out of the deployed app."""
+    import pathlib
+    import subprocess
+
+    data = pathlib.Path(__file__).resolve().parents[1] / "app" / "data"
+    tracked = subprocess.run(["git", "ls-files", "--", "."], capture_output=True, text=True, cwd=data, check=True).stdout
+    assert {"plans.json", "shs_template.json"} <= {pathlib.Path(p).name for p in tracked.split()}
