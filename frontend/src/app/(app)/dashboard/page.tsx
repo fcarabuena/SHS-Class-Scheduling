@@ -21,7 +21,7 @@ const COUNTS = [
 type Data = { counts: Record<string, number>; years: SchoolYear[]; shifts: Shift[] };
 
 export default function DashboardPage() {
-  const { school, user } = useAuth();
+  const { school, user, isAdmin } = useAuth();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
 
@@ -89,6 +89,8 @@ export default function DashboardPage() {
         ))}
       </section>
 
+      {isAdmin && <PlanNote />}
+
       {activeYear && <ScheduleDashboard />}
 
       <section>
@@ -121,5 +123,29 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+type Plan = { plan_name: string; renews_at: string | null; limits: { what: string; used: number; limit: number | null }[] };
+
+/** The school's subscription plan and how much of each limit is used (admins only). */
+function PlanNote() {
+  const [plan, setPlan] = useState<Plan | null>(null);
+  useEffect(() => {
+    api<Plan>("/api/billing").then(setPlan).catch(() => undefined);
+  }, []);
+  if (!plan) return null;
+  return (
+    <p className="text-sm text-stone-600">
+      Plan: <strong className="font-semibold text-stone-900">{plan.plan_name}</strong>
+      {plan.renews_at && <> · renews {plan.renews_at}</>}
+      {plan.limits.map((limit) => (
+        <span key={limit.what}>
+          {" "}
+          · {limit.what} {limit.used}
+          {limit.limit === null ? "" : ` of ${limit.limit}`}
+        </span>
+      ))}
+    </p>
   );
 }

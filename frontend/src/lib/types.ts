@@ -8,7 +8,11 @@ export type User = {
   role: Role;
   teacher_id: number | null;
   is_active: boolean;
+  is_platform_admin?: boolean;
 };
+
+/** Fired after notifications are read, so the menu's unread count refreshes. */
+export const NOTIFICATIONS_EVENT = "shs:notifications";
 
 export type SchoolSettings = {
   default_max_daily_hours: number;

@@ -4,14 +4,15 @@ A multi-school web app for building class schedules and teacher loads in
 Philippine Senior High Schools (Grades 11-12), with automated conflict
 detection.
 
-**Status: Phase 2 complete.** Schools can register, finish a setup wizard,
+**Status: Phase 3 complete.** Schools can register, finish a setup wizard,
 manage strands, subjects, sections, teachers and rooms (by hand or by
 CSV/Excel import), assign teachers to subjects with live load checks, and
 build the weekly timetable by drag and drop with real-time conflict
 detection, suggested fixes, and PDF/Excel export. The timetable can also be
 generated automatically, with a plain-language explanation of anything that
-does not fit, a dashboard, and a substitute finder. Public share links,
-notifications and multi-school administration come in Phase 3.
+does not fit, a dashboard, and a substitute finder. Timetables can be shared
+with a public read-only link, teachers are notified when their classes
+change, and the service operator can manage every school and its plan.
 
 | Layer | Technology |
 |---|---|
@@ -307,7 +308,61 @@ classes lists the teachers who are free then, available, and still within
 their daily limit, with qualified teachers and teachers who already know the
 section first. It only suggests; it does not change the timetable.
 
-### 9. Change history
+### 9. Sharing a timetable
+
+On the **Timetable** page choose **Share link** to create a link to the
+timetable on screen (one section, teacher or room). Anyone with the link sees
+that one timetable, read-only, without signing in, always up to date, and can
+print it. Choose how long it works (until turned off, 7 or 30 days, or a
+semester). **Turn off** stops a link at once. The dialog shows how often each
+link was opened.
+
+A shared timetable shows the teachers' names and rooms in it, so only share
+what may be public.
+
+### 10. Notifications
+
+A teacher whose account is linked to their teacher record (**User accounts**
+→ teacher) is told when a class is given to them or taken away, when their
+timetable changes, and when a new timetable is published. Whoever starts an
+auto-schedule run is told when it finishes. Several changes within an hour
+become one message. The count shows next to **Notifications** in the menu.
+
+### 11. Running the service for many schools
+
+The people named in `PLATFORM_ADMIN_EMAILS` (in `.env`) see **All schools**:
+every school with its number of users, teachers, sections and classes, last
+activity, plan and status. Only counts are shown, never a school's people or
+timetables. From there they can:
+
+- **Suspend** a school: its users are signed out at once, cannot sign in,
+  and its share links stop working. **Reactivate** undoes it. Your own
+  school cannot be suspended.
+- **Change a school's plan.**
+
+Every such change appears in that school's own change history.
+
+**Plans** are data in `backend/app/data/plans.json`: a name and limits on
+sections and teachers (`null` = no limit). Adding a section or teacher past
+the limit is refused with a message; editing never is. Admins see their plan
+and usage on the Dashboard. New schools start on `default_plan`.
+
+**Billing hook.** A payment provider can keep plans up to date by calling
+`POST /api/billing/webhook` with an `X-Signature: sha256=<hex>` header, the
+HMAC-SHA256 of the request body with `BILLING_WEBHOOK_SECRET`:
+
+```json
+{"event": "subscription.updated", "school_id": 12, "billing_ref": "cus_123",
+ "plan": "starter", "renews_at": "2027-06-30"}
+{"event": "subscription.cancelled", "billing_ref": "cus_123"}
+```
+
+The first event with a `school_id` links the provider's customer id
+(`billing_ref`) to the school; later events can use `billing_ref` alone.
+A cancelled subscription moves the school back to the default plan. No
+payment provider is connected yet; the webhook is off until the secret is set.
+
+### 12. Change history
 
 Admins can open **Change history** to see who changed the timetable or
 teacher loading, and when.
@@ -514,7 +569,12 @@ is the teacher loading; `SCHEDULE_ENTRY` is one class meeting on the timetable.
   A deactivated account loses access immediately.
 - **Tenant isolation.** Every query is filtered by the signed-in user's
   school, and references to another school's records are rejected.
-- **Passwords.** Hashed with argon2id; never logged or returned.
+- **Passwords.** Hashed with argon2id; never logged or returned. Sign-in is
+  limited to 10 tries per account and address in 5 minutes, and school
+  registration to 5 an hour per address.
+- **Public links.** Long random tokens (not guessable), one timetable each,
+  revocable, optionally expiring, and dead while a school is suspended. The
+  platform administrator sees counts only.
 - **Audit log.** Every create, update, delete and import, and every
   timetable and teacher loading change, is recorded with who and when
   (admin-only **Change history** page, or `GET /api/audit-logs`).
@@ -601,7 +661,11 @@ These are configurable data in the app; the shipped values are placeholders.
   shared job queue.
 - The preference weights have no settings screen yet (API only).
 - The substitute finder suggests cover but does not record substitutions.
+- Notifications are in the app only (no email or SMS) and the count refreshes
+  once a minute.
+- Rate limits are kept in memory, so they reset when the API restarts and
+  would need a shared store or the reverse proxy with several API processes.
+- Plans limit sections and teachers only. No payment provider is connected.
 - There is no exam timetable yet (the regular weekly timetable only).
 - Editing an existing school year's dates is API-only.
-- No login rate limiting yet; add it before any public deployment.
 - `docker-compose.yml` has not been run on this machine.

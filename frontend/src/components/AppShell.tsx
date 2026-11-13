@@ -4,13 +4,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { labelOf, ROLES } from "@/lib/types";
+import { labelOf, NOTIFICATIONS_EVENT, ROLES } from "@/lib/types";
 
 import { Alert, Button, Spinner } from "./ui";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/timetable", label: "Timetable" },
   { href: "/teacher-loading", label: "Teacher loading" },
   { href: "/substitutes", label: "Find a substitute" },
@@ -22,6 +24,7 @@ const NAV = [
   { href: "/users", label: "User accounts", adminOnly: true },
   { href: "/history", label: "Change history", adminOnly: true },
   { href: "/onboarding", label: "School setup", adminOnly: true },
+  { href: "/platform", label: "All schools", platformOnly: true },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -29,6 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   const needsSetup = !!school && !school.onboarding_completed;
 
@@ -38,9 +42,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     else if (needsSetup && isAdmin) router.replace("/onboarding");
   }, [loading, user, needsSetup, isAdmin, router]);
 
+  // shortcut: polls once a minute and on each page change; push (websocket) only if minutes matter.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = () =>
+      api<{ unread: number }>("/api/notifications", { params: { limit: 1 } })
+        .then((result) => !cancelled && setUnread(result.unread))
+        .catch(() => undefined);
+    load();
+    const timer = window.setInterval(load, 60_000);
+    window.addEventListener(NOTIFICATIONS_EVENT, load);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener(NOTIFICATIONS_EVENT, load);
+    };
+  }, [user, pathname]);
+
   if (loading || !user || !school || (needsSetup && isAdmin)) return <Spinner />;
 
-  const links = NAV.filter((item) => !item.adminOnly || isAdmin);
+  const links = NAV.filter((item) => (!item.adminOnly || isAdmin) && (!item.platformOnly || user.is_platform_admin));
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -82,6 +104,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     }`}
                   >
                     {item.label}
+                    {item.href === "/notifications" && unread > 0 && (
+                      <span className="ml-2 inline-block min-w-5 bg-red-600 px-1.5 text-center text-xs font-semibold text-white">
+                        {unread}
+                        <span className="sr-only"> unread</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

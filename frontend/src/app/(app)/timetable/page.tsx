@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { AutoScheduleDialog } from "@/components/AutoScheduleDialog";
+import { ShareDialog } from "@/components/ShareDialog";
 import { SignatoriesDialog } from "@/components/SignatoriesDialog";
 import { Alert, Badge, Button, Field, inputClass, Spinner } from "@/components/ui";
 import { api, ApiError, download } from "@/lib/api";
@@ -45,6 +46,7 @@ export default function TimetablePage() {
   const [exportAll, setExportAll] = useState(false);
   const [autoOpen, setAutoOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const names = useMemo(() => {
     const byId = <T extends { id: number }>(rows: T[] = []) => new Map(rows.map((row) => [row.id, row]));
@@ -297,6 +299,11 @@ export default function TimetablePage() {
           {isAdmin && (
             <Button variant="ghost" onClick={() => setSignOpen(true)}>
               Signatories
+            </Button>
+          )}
+          {canEdit && viewId !== null && (
+            <Button variant="ghost" onClick={() => setShareOpen(true)}>
+              Share link
             </Button>
           )}
         </div>
@@ -668,6 +675,9 @@ export default function TimetablePage() {
       </div>
 
       {signOpen && <SignatoriesDialog onClose={() => setSignOpen(false)} />}
+      {shareOpen && viewId !== null && (
+        <ShareDialog view={view} targetId={viewId} label={viewLabel} semesterId={data.semester_id} onClose={() => setShareOpen(false)} />
+      )}
       {autoOpen && (
         <AutoScheduleDialog
           semesterId={data.semester_id}
