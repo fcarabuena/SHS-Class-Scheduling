@@ -30,6 +30,7 @@ from ..models import (
 from ..scheduling import engine as eng
 from ..scheduling import export, jobs
 from ..scheduling.state import conflict_json, load_state, overview, pick_room
+from ..notify import notify_teacher, notify_users, users_of_teacher
 from ..services import audit, check_references, commit, get_owned
 
 router = APIRouter(prefix="/api", tags=["schedule"])
@@ -248,6 +249,12 @@ def update_assignment(assignment_id: int, data: AssignmentUpdate, db: DbSession,
         get_owned(db, Teacher, data.teacher_id, user.school_id)
     names = Names(db)
     before = names.teacher(assignment.teacher_id)
+    if assignment.teacher_id != data.teacher_id:
+        label = names.klass(assignment)
+        notify_teacher(db, user.school_id, data.teacher_id, "loading", "You were given a class", f"{label} is now yours.", "/timetable", user.id)
+        notify_teacher(
+            db, user.school_id, assignment.teacher_id, "loading", "A class was taken off your load", f"{label} is no longer yours.", "/timetable", user.id
+        )
     for member in _group_of(db, assignment):
         member.teacher_id = data.teacher_id
         for entry in _entries_of(db, member):
@@ -427,8 +434,14 @@ def create_entry(data: EntryCreate, db: DbSession, user: EditorUser):
     for entry in created:
         summary = f"{names.klass(entry)} placed on {names.slot(entry.day_of_week, entry.period_id)} in {names.room(room_id)}"
         audit(db, user, "create", "schedule_entry", entry.id, {"summary": summary, **_entry_values(entry)})
+    _tell_teacher(db, user, created[0].teacher_id, summary)
     commit(db)
     return _respond(db, user, semester, entry_id=created[0].id)
+
+
+def _tell_teacher(db: Session, user: User, teacher_id: int | None, what: str) -> None:
+    """Lets the teacher's own account know their timetable changed (repeats are folded into one message)."""
+    notify_teacher(db, user.school_id, teacher_id, "timetable", "Your timetable changed", what, "/timetable", user.id)
 
 
 def _entry_values(entry: ScheduleEntry) -> dict[str, Any]:
@@ -528,6 +541,10 @@ def update_entry(entry_id: int, data: EntryUpdate, db: DbSession, user: EditorUs
         for row in moving:
             summary = f"{names.klass(row)}: {', '.join(changes)}"
             audit(db, user, action, "schedule_entry", row.id, {"summary": summary, **_entry_values(row)})
+        if is_move or room_change:
+            _tell_teacher(db, user, entry.teacher_id, summary)
+            if is_move and partner is not None:
+                _tell_teacher(db, user, partner.teacher_id, f"{names.klass(partner)} moved to {names.slot(*old)}")
     commit(db)
     return _respond(db, user, semester)
 
@@ -543,6 +560,7 @@ def delete_entry(entry_id: int, db: DbSession, user: EditorUser):
         summary = f"{names.klass(row)} removed from {names.slot(row.day_of_week, row.period_id)}"
         audit(db, user, "delete", "schedule_entry", row.id, {"summary": summary, **_entry_values(row)})
         db.delete(row)
+    _tell_teacher(db, user, entry.teacher_id, summary)
     commit(db)
     return _respond(db, user, semester)
 
@@ -798,6 +816,11 @@ def apply_solver_job(job_id: int, db: DbSession, user: EditorUser):
     job.applied_at = func.now()
     summary = f"Generated timetable applied: {len(new_entries)} class(es) placed, {removed} replaced, {len(kept)} kept"
     audit(db, user, "apply", "solver_job", job.id, {"summary": summary})
+    teachers = {values["teacher_id"] for values in new_entries} | {e.teacher_id for e in state.entries}
+    recipients = [uid for teacher_id in teachers for uid in users_of_teacher(db, user.school_id, teacher_id, user.id)]
+    notify_users(
+        db, user.school_id, recipients, "timetable", "A new timetable was published", "Open your timetable to see your classes.", "/timetable"
+    )
     commit(db)
     return _respond(db, user, semester)
 

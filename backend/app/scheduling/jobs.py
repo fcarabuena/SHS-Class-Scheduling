@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..db import SessionLocal
 from ..models import DEFAULT_SCHOOL_SETTINGS, School, Semester, SolverJob
+from ..notify import notify_users
 from . import engine as eng
 from . import solver
 from .state import load_state
@@ -155,4 +156,15 @@ def _solve(db: Session, job: SolverJob, stop: threading.Event) -> None:
         job.status = "failed" if result.status == "failed" else "done"
         job.error = result.problems[-1][:500] if result.status == "failed" and result.problems else None
         job.finished_at = _now()
+        if job.user_id is not None and job.status == "done":
+            placed, required = job.result["placed_hours"], job.result["required_hours"]
+            notify_users(
+                db,
+                job.school_id,
+                [job.user_id],
+                "solver",
+                "Auto-schedule finished",
+                f"{placed:g} of {required:g} hours can be placed. Review the result and apply it.",
+                "/timetable",
+            )
         db.commit()

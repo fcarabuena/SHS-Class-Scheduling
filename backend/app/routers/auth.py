@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
-from ..deps import AdminUser, CurrentUser, DbSession
+from .. import ratelimit
+from ..billing import default_plan
+from ..config import settings
+from ..deps import SUSPENDED, AdminUser, CurrentUser, DbSession
 from ..models import AuditLog, Role, School, User
 from ..schemas import AuditLogOut, LoginIn, RegisterIn, TokenOut, UserCreate, UserOut, UserUpdate
 from ..security import create_access_token, hash_password, verify_password
@@ -22,11 +25,12 @@ def _email_taken(db: DbSession, email: str) -> bool:
 
 
 @router.post("/auth/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
-def register_school(data: RegisterIn, db: DbSession):
+def register_school(data: RegisterIn, db: DbSession, request: Request):
     """Creates a new school (tenant) together with its first admin account."""
+    ratelimit.check(f"register:{ratelimit.client_ip(request)}", settings.rate_limit_register)
     if _email_taken(db, data.email):
         raise HTTPException(status.HTTP_409_CONFLICT, "That email address is already registered.")
-    school = School(name=data.school_name)
+    school = School(name=data.school_name, plan=default_plan())
     db.add(school)
     db.flush()
     user = User(
@@ -44,11 +48,16 @@ def register_school(data: RegisterIn, db: DbSession):
 
 
 @router.post("/auth/login", response_model=TokenOut)
-def login(data: LoginIn, db: DbSession):
-    user = db.scalar(select(User).where(User.email == data.email.strip().lower()))
+def login(data: LoginIn, db: DbSession, request: Request):
+    email = data.email.strip().lower()
+    # Slows down password guessing: counted per address and per account.
+    ratelimit.check(f"login:{ratelimit.client_ip(request)}:{email}", settings.rate_limit_login)
+    user = db.scalar(select(User).where(User.email == email))
     # Same message for unknown email and wrong password.
     if user is None or not user.is_active or not verify_password(data.password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password.")
+    if db.get(School, user.school_id).status == "suspended" and not user.is_platform_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SUSPENDED)
     return _token(user)
 
 

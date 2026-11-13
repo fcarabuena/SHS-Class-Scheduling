@@ -7,10 +7,12 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from .db import get_db
-from .models import Role, User
+from .models import Role, School, User
 from .security import decode_access_token
 
 _bearer = HTTPBearer(auto_error=False)
+
+SUSPENDED = "This school's account is suspended. Please contact the service administrator."
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -34,6 +36,8 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise unauthorized
+    if db.get(School, user.school_id).status == "suspended" and not user.is_platform_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SUSPENDED)
     return user
 
 
@@ -51,3 +55,12 @@ def require_roles(*roles: Role) -> Callable[[User], User]:
 
 AdminUser = Annotated[User, Depends(require_roles(Role.admin))]
 EditorUser = Annotated[User, Depends(require_roles(Role.admin, Role.scheduler))]
+
+
+def require_platform_admin(user: CurrentUser) -> User:
+    if not user.is_platform_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only platform administrators can do this")
+    return user
+
+
+PlatformAdmin = Annotated[User, Depends(require_platform_admin)]

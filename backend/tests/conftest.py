@@ -39,6 +39,9 @@ def _database():
 
 @pytest.fixture(autouse=True)
 def _clean_tables(_database):
+    from app import ratelimit
+
+    ratelimit.reset()  # limits are per process; each test starts fresh
     yield
     tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
     with engine.begin() as conn:

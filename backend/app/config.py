@@ -24,6 +24,22 @@ class Settings(BaseSettings):
     max_import_bytes: int = 2 * 1024 * 1024
     max_import_rows: int = 5000
 
+    # Where the web app is reached; used to build public share links.
+    public_app_url: str = "http://localhost:3000"
+    # Comma-separated emails of the people who run the whole platform (all schools).
+    platform_admin_emails: str = ""
+    # Shared secret a payment provider signs its webhook calls with. Empty = webhook off.
+    billing_webhook_secret: str = ""
+
+    # Rate limits, as "attempts/seconds".
+    rate_limit_login: str = "10/300"
+    rate_limit_register: str = "5/3600"
+    rate_limit_public: str = "120/60"
+
+    @property
+    def platform_admins(self) -> set[str]:
+        return {e.strip().lower() for e in self.platform_admin_emails.split(",") if e.strip()}
+
     @property
     def database_url(self) -> URL:
         return URL.create(

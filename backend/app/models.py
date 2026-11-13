@@ -105,6 +105,11 @@ class School(Base):
     settings: Mapped[dict[str, Any]] = mapped_column(JSON, default=lambda: dict(DEFAULT_SCHOOL_SETTINGS))
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Tenant administration and billing (set by platform admins or the billing webhook).
+    status: Mapped[str] = mapped_column(String(20), default="active", server_default="active")  # active, suspended
+    plan: Mapped[str] = mapped_column(String(30), default="standard", server_default="standard")
+    plan_renews_at: Mapped[dt.date | None] = mapped_column(Date)
+    billing_ref: Mapped[str | None] = mapped_column(String(100), index=True)  # the provider's customer id
 
 
 class User(Base):
@@ -119,6 +124,13 @@ class User(Base):
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def is_platform_admin(self) -> bool:
+        """Platform admins are named in the server configuration, never in the database."""
+        from .config import settings
+
+        return self.email in settings.platform_admins
 
 
 class AuditLog(Base):
@@ -423,3 +435,41 @@ class SolverJob(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     applied_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ShareLink(Base):
+    """A public, read-only link to one timetable. Anyone with the token can view it."""
+
+    __tablename__ = "share_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = _school_fk()
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id", ondelete="CASCADE"))
+    token: Mapped[str] = mapped_column(String(64), unique=True)
+    view: Mapped[str] = mapped_column(String(20))  # section, teacher or room
+    target_id: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String(120))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    view_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_viewed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Notification(Base):
+    """An in-app message for one user."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = _school_fk()
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(160))
+    body: Mapped[str] = mapped_column(String(500), default="")
+    link: Mapped[str | None] = mapped_column(String(200))
+    # How many events this message stands for (repeats are folded into one).
+    count: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    read_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

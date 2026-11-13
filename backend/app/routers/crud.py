@@ -38,6 +38,7 @@ from ..schemas import (
     TrackIn,
     TrackOut,
 )
+from ..billing import enforce_limit
 from ..services import active_school_year, audit, check_references, commit, get_owned
 
 Prepare = Callable[[Session, User, dict[str, Any]], None]
@@ -70,6 +71,7 @@ def save(
     action = "update"
     if obj is None:
         action = "create"
+        enforce_limit(db, user.school_id, model)
         obj = model(school_id=user.school_id)
         apply(db, user, obj, dict(values))
         db.add(obj)

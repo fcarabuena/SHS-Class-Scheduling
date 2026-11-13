@@ -61,6 +61,7 @@ class UserOut(Out):
     role: Role
     teacher_id: int | None
     is_active: bool
+    is_platform_admin: bool = False
 
 
 class TokenOut(BaseModel):

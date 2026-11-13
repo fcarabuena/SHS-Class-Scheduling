@@ -10,6 +10,11 @@ import os
 
 os.environ["POSTGRES_DB"] = "shs_scheduler_e2e"
 os.environ["CORS_ORIGINS"] = "http://localhost:3001"
+os.environ["PUBLIC_APP_URL"] = "http://localhost:3001"
+os.environ["PLATFORM_ADMIN_EMAILS"] = "owner@platform.example"
+# The browser tests sign in and register many times from one address.
+os.environ["RATE_LIMIT_LOGIN"] = "1000/60"
+os.environ["RATE_LIMIT_REGISTER"] = "1000/60"
 
 import psycopg  # noqa: E402
 import uvicorn  # noqa: E402
