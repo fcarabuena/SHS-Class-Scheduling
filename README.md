@@ -170,7 +170,8 @@ pick this repository; Render reads `render.yaml`. Fill in:
   `https://example.com` for now (you get the real address in step 3).
 - `PLATFORM_ADMIN_EMAILS`: your email.
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: run
-  `backend\.venv\Scripts\python.exe -m app.push` and paste the two lines.
+  `.\.venv\Scripts\python.exe -m app.push` inside the `backend` folder and
+  paste the part after each `=`.
   `VAPID_SUBJECT`: `mailto:` plus a contact email.
 
 When the deploy finishes, open `https://<your-api>.onrender.com/api/health`;
