@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <header className="flex items-center justify-between bg-primary-800 px-4 py-3 text-white md:hidden print:hidden">
+      <header className="flex items-center justify-between border-t-4 border-red-600 bg-primary-700 px-4 py-3 text-white md:hidden print:hidden">
         <span className="truncate font-semibold">{school.name}</span>
         <button
           type="button"
@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <aside
         id="main-nav"
-        className={`${menuOpen ? "block" : "hidden"} w-full shrink-0 bg-primary-800 text-primary-50 md:flex md:min-h-screen md:w-60 md:flex-col print:hidden`}
+        className={`${menuOpen ? "block" : "hidden"} w-full shrink-0 bg-primary-700 text-primary-50 md:flex md:border-t-4 md:border-red-600 md:min-h-screen md:w-60 md:flex-col print:hidden`}
       >
         <div className="hidden px-5 pb-4 pt-6 md:block">
           <p className="text-xs uppercase tracking-wider text-accent">Class scheduling</p>
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className={`block border-l-4 px-4 py-2 text-sm -outline-offset-2 ${
                       active
                         ? "border-accent bg-primary-950 font-semibold text-white"
-                        : "border-transparent text-primary-100 hover:bg-primary-700 hover:text-white"
+                        : "border-transparent text-primary-100 hover:bg-primary-800 hover:text-white"
                     }`}
                   >
                     {item.label}
@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </ul>
         </nav>
-        <div className="border-t border-primary-600 px-5 py-4 text-sm">
+        <div className="border-t border-primary-500 px-5 py-4 text-sm">
           <p className="truncate font-medium text-white">{user.full_name}</p>
           <p className="text-primary-100">{labelOf(ROLES, user.role)}</p>
           <Button

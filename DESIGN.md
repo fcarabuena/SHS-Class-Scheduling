@@ -6,17 +6,18 @@ an analysis of the Carbon Design System look. It is kept unchanged below.
 
 HOW THIS PROJECT APPLIES IT (these notes win over the reference):
 
-1. Colours follow a Philippine public-school (DepEd-style) palette instead of
-   IBM Blue: main colour blue #0038a8 (hover #002d86, side menu #002d86),
-   highlight yellow #fcd116 (on dark blue only: the current-page marker and
-   small labels), red #ce1126 for conflicts and errors. These are the
-   Philippine flag colours. No DepEd seal, logo or wording is used: the app
-   is not an official DepEd product and must not look like one.
-   Green is kept only as a status colour (free slot, done, within limit).
+1. Colours are DepEd's, sampled from DepEd's own banner, instead of IBM Blue:
+   main colour deep blue #21468b (hover and pressed #1a3870, side menu
+   #21468b), red #e3112b (a thin rule on top of the side menu, and conflicts
+   and errors), sky blue #84c5f3 for highlights on dark blue, and a faint sky
+   tint #edf5fd as the page background. The DepEd logo, seal and wording are
+   not used: the app is not an official DepEd product and must not present
+   itself as one. Green is kept only as a status colour (free slot, done,
+   within limit).
 2. This is a working tool, not a marketing site. Ignore the hero, pricing and
    footer sections. Use the compact sizes: 14px body, 32-40px controls,
    16-24px gaps. The 76px display sizes are never used.
-3. Kept from the reference: white tiles on a #f4f4f4 page, charcoal #161616
+3. Kept from the reference: white tiles on the tinted page, charcoal #161616
    text, hairline #e0e0e0 borders, no shadows, square corners
    (0px; 4px only on small tags), IBM Plex Sans at 400 with 600 for emphasis,
    2px focus outlines. The side navigation is deep blue, not charcoal.

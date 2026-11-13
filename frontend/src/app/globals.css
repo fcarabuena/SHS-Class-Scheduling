@@ -2,9 +2,9 @@
 
 /*
  * Look and feel: see DESIGN.md at the project root. Carbon-style layout (white
- * tiles on a light gray page, charcoal text, square corners, no shadows) in a
- * Philippine public-school palette: blue as the main colour, yellow as the
- * highlight, red for problems. Pages use the names primary / accent / stone /
+ * tiles, charcoal text, square corners, no shadows) in the DepEd colours: deep
+ * blue as the main colour, red as the second brand colour and for problems,
+ * sky blue for the page tint and highlights. Pages use the names primary / accent / stone /
  * emerald / red / amber / sky; they are mapped to actual colours here, so one
  * edit restyles every page.
  */
@@ -32,21 +32,24 @@
   --color-stone-900: #161616;
   --color-stone-950: #161616;
 
-  /* Main colour: Philippine flag blue (#0038a8) and its tints and shades */
-  --color-primary-50: #eef3fc;
-  --color-primary-100: #dbe6fa;
-  --color-primary-200: #b7cdf5;
-  --color-primary-300: #86a8ec;
-  --color-primary-400: #4f7ddc;
-  --color-primary-500: #1f55c4;
-  --color-primary-600: #0038a8;
-  --color-primary-700: #0038a8;
-  --color-primary-800: #002d86;
-  --color-primary-900: #002266;
-  --color-primary-950: #00174a;
+  /* Main colour: the deep blue of the DepEd wordmark (#21468b, sampled from
+     DepEd's own banner) and its tints and shades */
+  --color-primary-50: #eef3fb;
+  --color-primary-100: #dce6f6;
+  --color-primary-200: #b9cdec;
+  --color-primary-300: #8dabdd;
+  --color-primary-400: #5b82c6;
+  --color-primary-500: #3562ad;
+  --color-primary-600: #21468b;
+  --color-primary-700: #21468b;
+  --color-primary-800: #1a3870;
+  --color-primary-900: #142b57;
+  --color-primary-950: #0e1f40;
 
-  /* Highlight: Philippine flag yellow. On dark blue only; never as text on white. */
-  --color-accent: #fcd116;
+  /* Highlight on dark blue: the banner's light sky blue. */
+  --color-accent: #84c5f3;
+  /* Page background: a faint tint of the banner's sky blue. */
+  --color-page: #edf5fd;
 
   /* Green is a status colour only: free slot, preferred slot, done, within limit */
   --color-emerald-50: #f1fbf4;
@@ -67,9 +70,9 @@
   --color-red-200: #ffb3b8;
   --color-red-300: #ff8389;
   --color-red-400: #fa4d56;
-  --color-red-500: #ce1126;
-  --color-red-600: #ce1126;
-  --color-red-700: #a2191f;
+  --color-red-500: #e3112b;
+  --color-red-600: #e3112b;
+  --color-red-700: #b50d22;
   --color-red-800: #750e13;
   --color-red-900: #520408;
   --color-red-950: #2d0709;
@@ -98,7 +101,7 @@ html {
 }
 
 body {
-  background: var(--color-stone-50);
+  background: var(--color-page);
   color: var(--color-stone-900);
   font-family: var(--font-sans);
   letter-spacing: 0.01em;
