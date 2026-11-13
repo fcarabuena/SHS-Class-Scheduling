@@ -1,10 +1,18 @@
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
+
+
+def _origin(value: str) -> str:
+    """'https://site.app/' or ' "https://Site.app/register" ' -> 'https://site.app' (what browsers send)."""
+    value = value.strip().strip("\"'").strip()
+    parts = urlsplit(value)
+    return f"{parts.scheme}://{parts.netloc}".lower() if parts.scheme and parts.netloc else value.rstrip("/")
 
 
 class Settings(BaseSettings):
@@ -46,6 +54,12 @@ class Settings(BaseSettings):
     rate_limit_login: str = "10/300"
     rate_limit_register: str = "5/3600"
     rate_limit_public: str = "120/60"
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        """Websites allowed to call the API: CORS_ORIGINS plus the site in PUBLIC_APP_URL, tidied up,
+        so a stray space, quote, trailing slash or path in a setting cannot lock the website out."""
+        return sorted({_origin(v) for v in [*self.cors_origins.split(","), self.public_app_url] if v.strip()})
 
     @property
     def platform_admins(self) -> set[str]:

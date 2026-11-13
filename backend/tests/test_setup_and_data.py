@@ -364,3 +364,12 @@ def test_bundled_data_files_are_in_git():
     data = pathlib.Path(__file__).resolve().parents[1] / "app" / "data"
     tracked = subprocess.run(["git", "ls-files", "--", "."], capture_output=True, text=True, cwd=data, check=True).stdout
     assert {"plans.json", "shs_template.json"} <= {pathlib.Path(p).name for p in tracked.split()}
+
+
+def test_allowed_origins_survive_small_mistakes_in_the_settings():
+    from app.config import Settings
+
+    messy = Settings(jwt_secret="x", CORS_ORIGINS=' https://Site.vercel.app/ , "https://other.example/register"', PUBLIC_APP_URL="https://site.vercel.app/")
+    assert messy.allowed_origins == ["https://other.example", "https://site.vercel.app"]
+    only_public = Settings(jwt_secret="x", CORS_ORIGINS="https://example.com", PUBLIC_APP_URL="https://real.vercel.app")
+    assert "https://real.vercel.app" in only_public.allowed_origins  # one correct setting is enough

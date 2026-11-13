@@ -26,9 +26,10 @@ async def unexpected_errors_as_json(request: Request, call_next):
         return JSONResponse({"detail": "Something went wrong on the server. Please try again."}, status_code=500)
 
 
+print(f"Accepting requests from: {', '.join(settings.allowed_origins)}", flush=True)  # visible in the host's log
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origins=settings.allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
