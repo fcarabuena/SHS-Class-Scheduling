@@ -629,7 +629,7 @@ export default function OnboardingPage() {
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-800">School setup</p>
-          <h1 className="text-2xl font-semibold text-stone-900">{school.name}</h1>
+          <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">{school.name}</h1>
         </div>
         {school.onboarding_completed && (
           <Button variant="secondary" onClick={() => router.push("/dashboard")}>
@@ -656,7 +656,7 @@ export default function OnboardingPage() {
         ))}
       </ol>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+      <div className="rounded-xl border border-stone-200 bg-white p-5 sm:p-7">
         <h2 className="mb-4 text-lg font-semibold text-stone-900">
           Step {step + 1} of {STEPS.length}: {STEPS[step]}
         </h2>

@@ -1,7 +1,79 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+/*
+ * Look and feel: see DESIGN.md at the project root (Carbon-style: white tiles
+ * on a light gray page, charcoal text, one green accent, square corners, no
+ * shadows). The app's pages use Tailwind's stone / emerald / red / amber / sky
+ * names; they are mapped to the design's palette here so one edit restyles
+ * every page.
+ */
+@theme {
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  /* Square corners; only small tags keep 4px (the plain "rounded" class). */
+  --radius-xs: 0px;
+  --radius-sm: 2px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+
+  /* Neutrals: Carbon gray */
+  --color-stone-50: #f4f4f4;
+  --color-stone-100: #ebebeb;
+  --color-stone-200: #e0e0e0;
+  --color-stone-300: #c6c6c6;
+  --color-stone-400: #a8a8a8;
+  --color-stone-500: #6f6f6f;
+  --color-stone-600: #525252;
+  --color-stone-700: #393939;
+  --color-stone-800: #262626;
+  --color-stone-900: #161616;
+  --color-stone-950: #161616;
+
+  /* The one accent: Carbon green */
+  --color-emerald-50: #f1fbf4;
+  --color-emerald-100: #defbe6;
+  --color-emerald-200: #a7f0ba;
+  --color-emerald-300: #6fdc8c;
+  --color-emerald-400: #42be65;
+  --color-emerald-500: #24a148;
+  --color-emerald-600: #198038;
+  --color-emerald-700: #0e6027;
+  --color-emerald-800: #0e6027;
+  --color-emerald-900: #044317;
+  --color-emerald-950: #022d0d;
+
+  /* Status only: conflicts (red), warnings (yellow), notes (blue) */
+  --color-red-50: #fff1f1;
+  --color-red-100: #ffd7d9;
+  --color-red-200: #ffb3b8;
+  --color-red-300: #ff8389;
+  --color-red-400: #fa4d56;
+  --color-red-500: #da1e28;
+  --color-red-600: #da1e28;
+  --color-red-700: #a2191f;
+  --color-red-800: #750e13;
+  --color-red-900: #520408;
+  --color-red-950: #2d0709;
+
+  --color-amber-50: #fcf4d6;
+  --color-amber-100: #fddc69;
+  --color-amber-200: #f1c21b;
+  --color-amber-300: #f1c21b;
+  --color-amber-400: #d2a106;
+  --color-amber-500: #b28600;
+  --color-amber-600: #8e6a00;
+  --color-amber-700: #684e00;
+  --color-amber-800: #483700;
+  --color-amber-900: #302400;
+
+  --color-sky-50: #edf5ff;
+  --color-sky-100: #d0e2ff;
+  --color-sky-200: #a6c8ff;
+  --color-sky-700: #0043ce;
+  --color-sky-800: #002d9c;
+  --color-sky-900: #001d6c;
 }
 
 html {
@@ -12,6 +84,13 @@ body {
   background: var(--color-stone-50);
   color: var(--color-stone-900);
   font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+}
+
+/* One clear focus style everywhere (keyboard users and older monitors). */
+:focus-visible {
+  outline: 2px solid var(--color-emerald-700);
+  outline-offset: 1px;
 }
 
 @media print {

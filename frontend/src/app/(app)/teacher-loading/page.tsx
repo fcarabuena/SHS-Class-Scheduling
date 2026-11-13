@@ -72,7 +72,7 @@ export default function TeacherLoadingPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Teacher loading</h1>
+          <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">Teacher loading</h1>
           <p className="mt-1 max-w-2xl text-sm text-stone-600">
             Decide who teaches each subject to each section. Loads are checked against every teacher&apos;s daily and
             weekly limits as you assign.

@@ -200,7 +200,7 @@ export default function TimetablePage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Timetable</h1>
+          <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">Timetable</h1>
           <p className="mt-1 max-w-2xl text-sm text-stone-600">
             {canEdit
               ? "Drag a class onto the week, or click a class and then a slot. Green slots are free of conflicts; red slots would cause one."

@@ -48,7 +48,7 @@ export default function SubstitutesPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900">Find a substitute</h1>
+        <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">Find a substitute</h1>
         <p className="mt-1 max-w-2xl text-sm text-stone-600">
           When a teacher is absent, see who is free to cover each of their classes that day. Only teachers who are not
           teaching, not marked unavailable, and still within their daily limit are listed, best match first.

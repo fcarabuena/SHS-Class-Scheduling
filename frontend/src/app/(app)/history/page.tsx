@@ -61,7 +61,7 @@ export default function HistoryPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900">Change history</h1>
+        <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">Change history</h1>
         <p className="mt-1 max-w-2xl text-sm text-stone-600">
           Who changed what, and when. The latest 300 changes are shown, newest first.
         </p>

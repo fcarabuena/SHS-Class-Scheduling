@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 
 import { AuthProvider } from "@/lib/auth";
 
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/600.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

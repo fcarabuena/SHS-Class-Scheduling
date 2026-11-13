@@ -16,6 +16,7 @@ notifications and multi-school administration come in Phase 3.
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 (React 19, TypeScript), Tailwind CSS 4 |
+| Design | Carbon-style look described in `DESIGN.md`, IBM Plex Sans (bundled, no web requests) |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2 |
 | Database | PostgreSQL 16, Alembic migrations |
 | Auth | JWT, argon2 password hashing, three roles |
@@ -46,6 +47,7 @@ shs-scheduler/
     src/components/   Shared UI (CRUD page, import dialog, availability grid)
     src/lib/          API client, auth, bell-schedule and timetable helpers
     e2e/              Playwright browser tests
+  DESIGN.md           Look and feel: the reference design and how this project applies it
   docker-compose.yml  Optional PostgreSQL container (untested, see below)
 ```
 
@@ -304,6 +306,14 @@ section first. It only suggests; it does not change the timetable.
 
 Admins can open **Change history** to see who changed the timetable or
 teacher loading, and when.
+
+## Look and feel
+
+The interface follows `DESIGN.md`: white tiles on a light gray page, charcoal
+text, square corners, no shadows, a charcoal side menu and one green accent.
+Red, yellow and blue appear only for conflicts, warnings and notes, always
+with a text label. All colours, corner sizes and the font are set in one
+place, `frontend/src/app/globals.css`; pages never hard-code them.
 
 ## Database schema
 

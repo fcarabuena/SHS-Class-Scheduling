@@ -172,7 +172,7 @@ export function ResourcePage(props: Props) {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">{props.title}</h1>
+          <h1 className="text-[1.75rem] font-normal leading-tight text-stone-900">{props.title}</h1>
           <p className="mt-1 max-w-2xl text-sm text-stone-600">{props.description}</p>
         </div>
         {mayEdit && (
