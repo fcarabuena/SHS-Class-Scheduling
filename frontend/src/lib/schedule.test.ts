@@ -30,6 +30,7 @@ function entry(id: number, over: Partial<Entry> = {}): Entry {
     period_id: 1,
     pinned: false,
     combined_group_id: null,
+    remarks: null,
     ...over,
   };
 }

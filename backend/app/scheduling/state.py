@@ -94,6 +94,7 @@ def load_state(db: Session, school_id: int, semester: Semester) -> eng.State:
             room_id=e.room_id,
             pinned=e.pinned,
             group=e.combined_group_id,
+            remarks=e.remarks,
         )
         for e in rows(ScheduleEntry, ScheduleEntry.semester_id == semester.id)
     ]
@@ -148,6 +149,7 @@ def overview(state: eng.State, semester: Semester) -> dict[str, Any]:
                 "period_id": e.period_id,
                 "pinned": e.pinned,
                 "combined_group_id": e.group,
+                "remarks": e.remarks,
             }
             for e in state.entries
         ],

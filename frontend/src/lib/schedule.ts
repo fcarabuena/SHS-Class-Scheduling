@@ -22,6 +22,7 @@ export type Entry = {
   period_id: number;
   pinned: boolean;
   combined_group_id: number | null;
+  remarks: string | null;
 };
 
 export type Conflict = {

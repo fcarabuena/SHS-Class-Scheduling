@@ -13,7 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer
 from reportlab.platypus import Table as PdfTable
 from reportlab.platypus import TableStyle
 from sqlalchemy import select
@@ -48,6 +48,8 @@ class Document:
     heading: str
     view: str
     tables: list[Table] = field(default_factory=list)
+    # People who sign the printed timetable: {"label", "name", "position"} each.
+    signatories: list[dict[str, str]] = field(default_factory=list)
 
 
 def build(db: Session, school_id: int, semester: Semester, view: str, only_id: int | None = None) -> Document:
@@ -56,6 +58,9 @@ def build(db: Session, school_id: int, semester: Semester, view: str, only_id: i
     year = db.get(SchoolYear, semester.school_year_id)
     ordinal = "1st" if semester.number == 1 else "2nd"
     document = Document(school.name, f"School year {year.name}, {ordinal} semester", view)
+    document.signatories = [
+        s for s in (school.settings or {}).get("signatories") or [] if isinstance(s, dict) and s.get("name")
+    ]
 
     shifts = {s.id: s.name for s in db.scalars(select(Shift).where(Shift.school_id == school_id))}
     periods = list(
@@ -80,7 +85,7 @@ def build(db: Session, school_id: int, semester: Semester, view: str, only_id: i
             cells = []
             for day in state.days:
                 here = by_cell.get((day, period.id), [])
-                cells.append([] if period.is_break or not here else lines(here))
+                cells.append([] if period.is_break or not here else [*lines(here), here[0].remarks or ""])
             table.rows.append(Row(label, time, period.is_break, cells))
         return table
 
@@ -170,6 +175,14 @@ def to_xlsx(document: Document) -> bytes:
                     cell.font, cell.fill = Font(italic=True, color="78716C"), _BREAK_FILL
             if index > 0 and not is_break:
                 sheet.row_dimensions[row[0].row].height = 48
+        if document.signatories:
+            row_number = sheet.max_row + 2
+            for index, person in enumerate(document.signatories):
+                column = 1 + index * 2 if index < 4 else 1 + (index - 4) * 2
+                top = row_number if index < 4 else row_number + 6
+                sheet.cell(top, column, f"{person.get('label', '')}:")
+                sheet.cell(top + 3, column, person.get("name", "")).font = Font(bold=True)
+                sheet.cell(top + 4, column, person.get("position", ""))
         sheet.column_dimensions["A"].width = 18
         sheet.column_dimensions["B"].width = 13
         for column in range(3, 3 + len(table.days)):
@@ -202,6 +215,7 @@ def to_pdf(document: Document) -> bytes:
     small = ParagraphStyle("small", parent=styles["Normal"], fontSize=9, textColor=colors.HexColor("#57534e"))
     cell = ParagraphStyle("cell", parent=styles["Normal"], fontSize=7.5, leading=9, alignment=1)
     head = ParagraphStyle("head", parent=cell, fontName="Helvetica-Bold", fontSize=8.5)
+    sign = ParagraphStyle("sign", parent=styles["Normal"], fontSize=9, leading=11)
 
     story = []
     for index, table in enumerate(document.tables):
@@ -244,6 +258,20 @@ def to_pdf(document: Document) -> bytes:
         grid = PdfTable(data, colWidths=[first, *[width] * len(table.days)], repeatRows=1)
         grid.setStyle(TableStyle(style))
         story.append(grid)
+        if document.signatories:
+            people = document.signatories
+            blocks = [
+                Paragraph(
+                    f"{escape(p.get('label', ''))}:<br/><br/><br/><b>{escape(p.get('name', ''))}</b><br/>{escape(p.get('position', ''))}",
+                    sign,
+                )
+                for p in people
+            ]
+            per_row = min(4, len(blocks))
+            rows = [blocks[i : i + per_row] + [""] * (per_row - len(blocks[i : i + per_row])) for i in range(0, len(blocks), per_row)]
+            signatures = PdfTable(rows, colWidths=[(page[0] - 24 * mm) / per_row] * per_row)
+            signatures.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 10)]))
+            story += [Spacer(1, 6 * mm), KeepTogether(signatures)]
     pdf.build(story)
     return buffer.getvalue()
 

@@ -70,6 +70,7 @@ class EntryUpdate(BaseModel):
     period_id: int | None = None
     room_id: int | None = None
     pinned: bool | None = None
+    remarks: str | None = Field(default=None, max_length=120)
 
 
 class SolveIn(BaseModel):
@@ -439,6 +440,7 @@ def _entry_values(entry: ScheduleEntry) -> dict[str, Any]:
         "day_of_week": entry.day_of_week,
         "period_id": entry.period_id,
         "pinned": entry.pinned,
+        "remarks": entry.remarks,
     }
 
 
@@ -486,6 +488,13 @@ def update_entry(entry_id: int, data: EntryUpdate, db: DbSession, user: EditorUs
         for row in moving:
             row.pinned = data.pinned
         changes.append("pinned" if data.pinned else "unpinned")
+
+    if "remarks" in fields:
+        text = (data.remarks or "").strip() or None
+        if text != entry.remarks:
+            for row in moving:
+                row.remarks = text
+            changes.append(f"remarks: {text}" if text else "remarks cleared")
 
     if room_change:
         if data.room_id is not None:

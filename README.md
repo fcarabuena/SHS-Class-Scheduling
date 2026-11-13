@@ -258,6 +258,11 @@ Open **Timetable** and choose **By section**, **By teacher** or **By room**.
   qualified teacher.
 - **Export Excel / Export PDF** saves the timetable on screen; tick
   **All sections/teachers/rooms** for one sheet or page each.
+- **Remarks**: click a class and type a short note (for example "Bring lab
+  gown"). It shows on the class and on printouts.
+- **Signatories** (admin): the people who sign the printed timetable, such as
+  "Prepared by" and "Approved", with name and position. They are printed
+  under every exported timetable with space to sign.
 
 Conflicts checked: a teacher, room or section in two classes at once
 (by clock time, so two shifts are handled); teacher not qualified; teacher
@@ -596,6 +601,7 @@ These are configurable data in the app; the shipped values are placeholders.
   shared job queue.
 - The preference weights have no settings screen yet (API only).
 - The substitute finder suggests cover but does not record substitutions.
+- There is no exam timetable yet (the regular weekly timetable only).
 - Editing an existing school year's dates is API-only.
 - No login rate limiting yet; add it before any public deployment.
 - `docker-compose.yml` has not been run on this machine.

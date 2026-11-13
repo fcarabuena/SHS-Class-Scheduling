@@ -58,6 +58,29 @@ test("auto-schedule around a pinned class, then check the dashboard and the subs
   await expect(page.getByRole("table", { name: "Weekly timetable of 11-A" }).getByRole("button", { name: /^(MATH|SCI),/ })).toHaveCount(4);
   await page.screenshot({ path: `${SHOTS}/15-auto-schedule-applied.png`, fullPage: true });
 
+  // --- remarks on a class, signatories on printouts ------------------------------------
+  const pinnedClass = page.locator(`[data-cell="1:${p1}"]`).getByRole("button", { name: /^SCI/ });
+  await pinnedClass.click();
+  const panel = page.getByRole("region", { name: "Selected class" });
+  await panel.getByLabel("Remarks").fill("Bring lab gown");
+  await panel.getByLabel("Remarks").press("Enter");
+  await expect(pinnedClass).toContainText("Bring lab gown");
+
+  await page.getByRole("button", { name: "Signatories" }).click();
+  const signing = page.getByRole("dialog");
+  await signing.getByLabel("Signatory 1 name").fill("Maria Santos");
+  await signing.getByLabel("Signatory 1 position").fill("Class Program Coordinator");
+  await signing.getByRole("button", { name: "Remove signatory 2" }).click();
+  await page.screenshot({ path: `${SHOTS}/18-signatories.png`, fullPage: true });
+  await signing.getByRole("button", { name: "Save signatories" }).click();
+  await expect(signing).toHaveCount(0);
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export PDF" }).click()]);
+  expect(pdf.suggestedFilename()).toBe("timetable-11-A.pdf");
+  await pdf.saveAs("D:/Temp/shots/timetable-11-A.pdf");
+  await page.getByRole("button", { name: "Signatories" }).click();
+  await expect(page.getByRole("dialog").getByLabel("Signatory 1 name")).toHaveValue("Maria Santos");
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+
   // --- dashboard ----------------------------------------------------------------------
   await page.getByRole("link", { name: "Dashboard" }).click();
   const summary = page.getByRole("region", { name: "Schedule summary" });

@@ -134,6 +134,7 @@ class Entry:
     room_id: int | None = None
     pinned: bool = False
     group: int | None = None
+    remarks: str | None = None  # carried for display only; no rule looks at it
 
 
 @dataclass

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { AutoScheduleDialog } from "@/components/AutoScheduleDialog";
+import { SignatoriesDialog } from "@/components/SignatoriesDialog";
 import { Alert, Badge, Button, Field, inputClass, Spinner } from "@/components/ui";
 import { api, ApiError, download } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -33,7 +34,7 @@ type Advice = { entryId: number; conflicts: Conflict[]; fixes: Fix[] };
 const pickedKey = (picked: Picked | null) => (picked ? `${picked.kind}:${picked.id}` : "");
 
 export default function TimetablePage() {
-  const { canEdit, user } = useAuth();
+  const { canEdit, isAdmin, user } = useAuth();
   const { data, lookups, error, setError, busy, run, semesterId, setSemesterId } = useSchedule();
   const [view, setView] = useState<ViewKind>(user?.teacher_id ? "teacher" : "section");
   const [chosenId, setChosenId] = useState<number | null>(user?.teacher_id ?? null);
@@ -43,6 +44,7 @@ export default function TimetablePage() {
   const [hint, setHint] = useState("");
   const [exportAll, setExportAll] = useState(false);
   const [autoOpen, setAutoOpen] = useState(false);
+  const [signOpen, setSignOpen] = useState(false);
 
   const names = useMemo(() => {
     const byId = <T extends { id: number }>(rows: T[] = []) => new Map(rows.map((row) => [row.id, row]));
@@ -189,11 +191,12 @@ export default function TimetablePage() {
   function cardLines(meeting: Meeting): string[] {
     const first = meeting.entries[0];
     const sections = meeting.entries.map((entry) => sectionName(entry.section_id)).join(" + ");
+    const note = first.remarks ? [first.remarks] : [];
     if (view === "section") {
       const others = meeting.entries.length > 1 ? [`with ${meeting.entries.length - 1} more section(s)`] : [];
-      return [teacherName(first.teacher_id), roomName(first.room_id), ...others];
+      return [teacherName(first.teacher_id), roomName(first.room_id), ...others, ...note];
     }
-    return [sections, view === "teacher" ? roomName(first.room_id) : teacherName(first.teacher_id)];
+    return [sections, view === "teacher" ? roomName(first.room_id) : teacherName(first.teacher_id), ...note];
   }
 
   return (
@@ -291,6 +294,11 @@ export default function TimetablePage() {
           <Button variant="secondary" onClick={() => exportAs("pdf")}>
             Export PDF
           </Button>
+          {isAdmin && (
+            <Button variant="ghost" onClick={() => setSignOpen(true)}>
+              Signatories
+            </Button>
+          )}
         </div>
       </div>
 
@@ -519,6 +527,26 @@ export default function TimetablePage() {
                       </select>
                     )}
                   </Field>
+                  <Field label="Remarks" hint="Shown on the timetable and on printouts. Saved when you leave the box.">
+                    {(id) => (
+                      <input
+                        id={id}
+                        key={`${selected.id}:${selected.remarks ?? ""}`}
+                        className={inputClass}
+                        maxLength={120}
+                        defaultValue={selected.remarks ?? ""}
+                        disabled={busy}
+                        onBlur={(event) => {
+                          if (event.target.value.trim() !== (selected.remarks ?? "")) {
+                            updateEntry(selected.id, { remarks: event.target.value });
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                        }}
+                      />
+                    )}
+                  </Field>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -533,7 +561,10 @@ export default function TimetablePage() {
                   </Button>
                 </div>
               ) : (
-                <p className="mt-2 text-sm">Room: {roomName(selected.room_id)}</p>
+                <p className="mt-2 text-sm">
+                  Room: {roomName(selected.room_id)}
+                  {selected.remarks && <span className="block">Remarks: {selected.remarks}</span>}
+                </p>
               )}
 
               {selectedAdvice && selectedAdvice.conflicts.length > 0 && (
@@ -636,6 +667,7 @@ export default function TimetablePage() {
         </aside>
       </div>
 
+      {signOpen && <SignatoriesDialog onClose={() => setSignOpen(false)} />}
       {autoOpen && (
         <AutoScheduleDialog
           semesterId={data.semester_id}

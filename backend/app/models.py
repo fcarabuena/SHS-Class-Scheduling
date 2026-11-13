@@ -400,6 +400,8 @@ class ScheduleEntry(Base):
     pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     # Entries sharing a group id are one combined class (same teacher + room).
     combined_group_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    # A short note shown on the timetable and on printouts, e.g. "Bring lab gown".
+    remarks: Mapped[str | None] = mapped_column(String(120))
 
 
 class SolverJob(Base):

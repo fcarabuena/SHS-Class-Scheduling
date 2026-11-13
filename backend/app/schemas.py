@@ -97,6 +97,27 @@ class SchoolIn(In):
     logo_url: str | None = Field(default=None, max_length=500)
     settings: dict[str, Any] | None = None
 
+    @field_validator("settings")
+    @classmethod
+    def _check_signatories(cls, settings: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Signatories printed under exported timetables: label, name, position."""
+        if settings is None or "signatories" not in settings:
+            return settings
+        rows = settings["signatories"]
+        if not isinstance(rows, list) or len(rows) > 6:
+            raise ValueError("signatories must be a list of at most 6 people")
+        cleaned = []
+        for row in rows:
+            if not isinstance(row, dict):
+                raise ValueError("each signatory needs a label, a name and a position")
+            item = {key: str(row.get(key) or "").strip() for key in ("label", "name", "position")}
+            if not item["label"] or not item["name"]:
+                raise ValueError("each signatory needs a label (for example 'Prepared by') and a name")
+            if len(item["label"]) > 60 or len(item["name"]) > 120 or len(item["position"]) > 120:
+                raise ValueError("a signatory's label, name or position is too long")
+            cleaned.append(item)
+        return {**settings, "signatories": cleaned}
+
 
 class SchoolOut(Out):
     name: str

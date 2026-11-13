@@ -576,3 +576,58 @@ def test_substitute_finder_lists_who_can_cover_an_absent_teacher(admin, world):
     assert ok(admin.get(f"/api/substitutes?teacher_id={world['ana']['id']}&day_of_week={TUE}"))["classes"] == []
     viewer = add_user(admin, "teacher", "viewer@alpha.example")
     assert viewer.get(f"/api/substitutes?teacher_id={world['ana']['id']}&day_of_week={MON}").status_code == 200
+
+
+# --- remarks and signatories (ideas from the legacy scheduling system) --------
+
+
+def test_class_remarks_are_saved_shown_and_exported(admin, world):
+    data = generate(admin)
+    data = assign(admin, data, world["a"], world["math"], world["ana"])
+    p1 = world["periods"][0]
+    data = ok(place(admin, data, world["a"], world["math"], MON, p1), 201)
+    entry = entry_at(data, world["a"], MON, p1)
+    assert entry["remarks"] is None
+
+    data = ok(admin.put(f"/api/schedule/entries/{entry['id']}", json={"remarks": "  Bring calculators  "}))
+    assert entry_at(data, world["a"], MON, p1)["remarks"] == "Bring calculators"
+    sheet = load_workbook(io.BytesIO(admin.get("/api/schedule/export?view=section").content))["11-A"]
+    assert sheet["C6"].value == "MATH\nAna Cruz\nRoom 1\nBring calculators"
+    log = ok(admin.get("/api/audit-logs?entity_type=schedule_entry"))[0]
+    assert log["changes"]["summary"] == "11-A · MATH: remarks: Bring calculators"
+
+    # Moving a class keeps its note; an empty note clears it; too long is refused.
+    data = ok(admin.put(f"/api/schedule/entries/{entry['id']}", json={"day_of_week": TUE, "period_id": p1["id"]}))
+    assert entry_at(data, world["a"], TUE, p1)["remarks"] == "Bring calculators"
+    data = ok(admin.put(f"/api/schedule/entries/{entry['id']}", json={"remarks": " "}))
+    assert entry_at(data, world["a"], TUE, p1)["remarks"] is None
+    assert admin.put(f"/api/schedule/entries/{entry['id']}", json={"remarks": "x" * 121}).status_code == 422
+
+
+def test_signatories_are_validated_and_printed_under_exports(admin, world):
+    people = [
+        {"label": "Prepared by", "name": " Maria Santos ", "position": "Class Program Coordinator"},
+        {"label": "Approved", "name": "Jose Reyes", "position": "School Principal"},
+    ]
+    school = ok(admin.put("/api/school", json={"name": "Alpha Test School", "settings": {"signatories": people}}))
+    assert school["settings"]["signatories"][0] == {
+        "label": "Prepared by", "name": "Maria Santos", "position": "Class Program Coordinator",
+    }
+    assert school["settings"]["default_max_daily_hours"] == 6  # other settings untouched
+
+    for bad in ([{"label": "Approved", "name": ""}], "nobody", [{"label": "x", "name": "y"}] * 7):
+        response = admin.put("/api/school", json={"name": "Alpha Test School", "settings": {"signatories": bad}})
+        assert response.status_code == 422
+
+    data = generate(admin)
+    ok(place(admin, data, world["a"], world["math"], MON, world["periods"][0]), 201)
+    sheet = load_workbook(io.BytesIO(admin.get("/api/schedule/export?view=section").content))["11-A"]
+    cells = {cell.value: cell.coordinate for row in sheet.iter_rows() for cell in row if cell.value}
+    assert {"Prepared by:", "Maria Santos", "Class Program Coordinator", "Approved:", "Jose Reyes", "School Principal"} <= set(cells)
+    assert cells["Prepared by:"] == "A11" and cells["Approved:"] == "C11" and cells["Jose Reyes"] == "C14"
+
+    with_signatures = admin.get("/api/schedule/export?view=section&format=pdf")
+    assert with_signatures.status_code == 200 and with_signatures.content.startswith(b"%PDF")
+    ok(admin.put("/api/school", json={"name": "Alpha Test School", "settings": {"signatories": []}}))
+    without = admin.get("/api/schedule/export?view=section&format=pdf")
+    assert len(with_signatures.content) > len(without.content)

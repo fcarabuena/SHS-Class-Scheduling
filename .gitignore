@@ -16,3 +16,6 @@ data/
 # Editors / OS
 .vscode/
 Thumbs.db
+
+# Reference material only: not part of this project, never committed
+Sample/
